@@ -1,7 +1,7 @@
 main:
-  - title: "블로그"
+  - title: "Blog"
     url: /
-  - title: "카테고리"
+  - title: "Category"
     url: /categories/
-  - title: "태그"
+  - title: "Tags"
     url: /tags/
