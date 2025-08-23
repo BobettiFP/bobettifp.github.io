@@ -17,11 +17,11 @@ minimal_mistakes_skin    : "default" # "air", "aqua", "contrast", "dark", "dirt"
 # Site Settings
 locale                   : "ko-KR"
 rtl                      : # true, false (default) # turns direction of the page into right to left for RTL languages
-title                    : "Site Title"
+title                    : "Scribble"
 title_separator          : "-"
 subtitle                 : # site tagline that appears below site title in masthead
 name                     : "Kim Hyegang"
-description              : "An amazing website."
+description              : "Open version of my notion."
 url                      : "https://bobettifp.github.io"
 baseurl                  : # the subpath of your site, e.g. "/blog"
 repository               : "bobettifp/bobettifp.github.io"
@@ -117,7 +117,7 @@ author:
   avatar           : # path of avatar image, e.g. "/assets/images/bio-photo.jpg"
   bio              : "LLM · RL · Network Science · NLP"
   location         : "Seoul-Korea / Toronto-Canada"
-  email            : #"bobetti219@gmail.com"
+  email            : "bobetti219@gmail.com"
   links:
     - label: "Email"
       icon: "fas fa-fw fa-envelope-square"
@@ -141,24 +141,24 @@ author:
 # Site Footer
 footer:
   links:
-    - label: "Twitter"
-      icon: "fab fa-fw fa-twitter-square"
-      # url:
-    - label: "Facebook"
-      icon: "fab fa-fw fa-facebook-square"
-      # url:
+    # - label: "Twitter"
+    #   icon: "fab fa-fw fa-twitter-square"
+    #   # url:
+    # - label: "Facebook"
+    #   icon: "fab fa-fw fa-facebook-square"
+    #   # url:
     - label: "GitHub"
       icon: "fab fa-fw fa-github"
       url: "https://github.com/bobettifp"
-    - label: "GitLab"
-      icon: "fab fa-fw fa-gitlab"
-      # url:
-    - label: "Bitbucket"
-      icon: "fab fa-fw fa-bitbucket"
-      # url:
+    # - label: "GitLab"
+    #   icon: "fab fa-fw fa-gitlab"
+    #   # url:
+    # - label: "Bitbucket"
+    #   icon: "fab fa-fw fa-bitbucket"
+    #   # url:
     - label: "Instagram"
       icon: "fab fa-fw fa-instagram"
-      # url:
+       url: "https://www.instagram.com/bobetti219/"
   since: "2025"
 
 
