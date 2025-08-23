@@ -26,21 +26,14 @@ This technical report describes the intersection of process mining and large lan
     
     - 주요 산출물(모델/뷰):
 
-        <img src=".img/procedural_process_model.PNG">
+        ![procedural](./img/procedural_process_model.PNG)
     
         - DFG (Directly-Follows Graph): A→B 엣지(빈도/시간)로 “직후(직접선행)” 관계를 요약. 병목(높은 평균 소요시간), 주경로(최빈 엣지) 파악에 유용. 
         
-        - Procedural Model: Petri net, BPMN. 흐름 제어를 명시적으로 규정(순서, 병행, 동기화).
+        - A --> B --> C --> D 꼴로 나타나는 프로세스는 Traditional Process Mining에 속함
 
-        - 성능 주석(Performance annotation): 엣지/활동에 평균 리드타임·대기시간·표준편차 등 부착.
         
-        - Variants(경로 유형): 동일한 활동 시퀀스를 따라간 케이스 묶음과 그 빈도.
-
-        - 케이스/피처 테이블: 케이스별 집계 피처(총 소요시간, 활동 수, SLA 위반 여부 등).
-
-
-
-- Object-centric Process Mining:
+- Object-centric Process Mining (OCPM):
 
 We introduce and explore various prompting strategies: 
 
