@@ -306,8 +306,26 @@ Object Centric Process Mining (OCPM)과 Traditional Process Mining (DFG, Petri N
 </script>
 {% endraw %}
 
+위 Figure에서 알 수 있듯, 전통적 프로세스 마이닝은 전체 Process Chain을 Network 형태로 나타내는 것에 치중한다.
 
-### Traditional Process Mining
+반면, OCPM에서는 각 Obejct가 각 Procedure에서 어떻게 관여하는지, 어떤 상호작용이 일어나는지에 초점을 둔다.
 
+따라서 연구에 적용할 때에는 두 가지의 접근 방법으로부터 도출할 수 있는 결과가 상이하다.
 
-### OCPM
+- Traditional Process Mining:
+
+특정 Process의 시작부터 끝까지 전체를 조망하는 것에 집중.
+
+Network Property를 활용해 거시적 관점에서의 통계 분석에 용이
+
+- OCPM:
+
+전체 Process에서 각 Object 간 이루어지는 상호작용 방식을 파악하는 데에 집중.
+
+적용 예시)
+
+- Bank Authentication Process에서 병목 구간을 파악하고자 한다 --> Traditional Process Mining
+
+- 병목 구간이 Login 과정이라고 치자. 여기에서의 Delay는 왜 발생하는 것일까? Login 과정에 관여하는 Object는 무엇이 있는가? User, DB info retrieval, Server 등이 있겠다. 반복적으로 나타나는 문제가 DB네? DB구조에 개선이 필요하겠다.
+
+이러한 요소들을 파악하기 위해 Traditional Process Mining과 OCPM은 상보적으로 활용 가능하다.
