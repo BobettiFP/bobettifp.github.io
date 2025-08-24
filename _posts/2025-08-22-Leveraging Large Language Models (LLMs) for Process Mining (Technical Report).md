@@ -33,7 +33,10 @@ This technical report describes the intersection of process mining and large lan
         - A --> B --> C --> D 꼴로 나타나는 프로세스는 Traditional Process Mining에 속함
 
         
-- Object-centric Process Mining (OCPM):
+- Object-centric Process Mining (OCPM): 전체 네트워크에서 각 Obejct가 어떤 식으로 상호작용하고 있는지를 파악하기 위해 사용.
+
+더 자세히... [OCPM 설명]({% post_url 2025-08-23-OCPM-Explanation %})
+
 
 We introduce and explore various prompting strategies: 
 
@@ -63,11 +66,7 @@ with notable proficiency in interpreting both **declarative** and **procedural p
 
 - Procedural Process Model:
 
-In addition, we find that both models demonstrate strong performance in the **object-centric setting**, which could significantly propel the advancement of the object-centric process mining discipline.
-
-- Object-centric Process Mining:
-
-Additionally, these models display a noteworthy capacity to evaluate various concepts of fairness in process mining. 
+In addition, we find that both models demonstrate strong performance in the object-centric setting, which could significantly propel the advancement of the object-centric process mining discipline.Additionally, these models display a noteworthy capacity to evaluate various concepts of fairness in process mining. 
 
 - Process Mining에서 Fairness란?
 
