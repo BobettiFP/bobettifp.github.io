@@ -1,10 +1,11 @@
+---
 title: "OCPM vs Traditional Process Mining"
 layout: single
 date: 2025-08-23 10:00:00 -0400
 categories: [Dictionary]
 tags: [process mining]
 author_profile: true
-
+---
 ## Overview
 
 Object Centric Process Mining (OCPM)과 Traditional Process Mining (DFG, Petri Net 등)의 차이는 무엇일까?

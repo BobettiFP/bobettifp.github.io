@@ -1,10 +1,11 @@
+---
 title: "Leveraging Large Language Models (LLMs) for Process Mining (Technical Report)"
 layout: single
 date: 2025-08-22 10:00:00 -0400
 categories: [Literature-Review]
 tags: [process mining, llm, direct answering prompt, multi-prompt answering, database query generation]
 author_profile: true
-
+---
 ## TL;DR
 이 기술보고서는 **프로세스 마이닝 산출물(DFG, 이벤트 로그, 프로세스 모델 등)을 텍스트로 추상화**해 LLM이 이해·추론하도록 하고, **직답(Direct), 다중 프롬프트(Multi-prompt), DB 쿼리 생성** 세 전략으로 질의·검증하는 방법을 실험한다. GPT-4와 Bard는 **절차적/선언적 모델을 꽤 잘 해석**했고, **오브젝트 중심 프로세스 마이닝**에서도 강점을 보였으며, **공정성(fairness) 평가**에도 잠재력이 확인됐다.
 
@@ -37,16 +38,39 @@ This technical report describes the intersection of process mining and large lan
 
 더 자세히... [OCPM 설명]({% post_url 2025-08-23-OCPM-Explanation %})
 
-
 We introduce and explore various prompting strategies: 
 
 **direct answering**, where the large language model directly addresses user queries; 
 
-- Direct Answering Prompting
+- Direct Answering Prompting: 딱 답만 말하도록 LLM을 유도하는 것.
+
+예시)
+
+Prompt:
+"다음 이벤트 로그를 기반으로 가장 병목이 심한 활동(Activity)을 한 줄로 답하세요:
+[이벤트 로그 JSON 입력]"
+
+→ GPT-4 답변:
+"주요 병목은 '결제 승인(Approve Payment)' 단계에서 발생했습니다."
+
 
 **multi-prompt answering**, which allows the model to incrementally build on the knowledge obtained through a series of prompts; 
 
-- Multi-prompt Answering:
+- Multi-prompt Answering: 중간 결과를 모두 출력하도록 하는 프롬프팅 방법. LLM을 여러 차례 호출해야 한다는 단점. COT 할 때, 중간중간 결과물을 출력하는 방식과 유사하지만, COT는 일회성 프롬프트라는 차이. 
+
+예시)
+
+Prompt 1:
+"다음 이벤트 로그에서 각 활동의 평균 처리 시간을 계산하세요."
+→ 중간 결과 출력
+
+Prompt 2:
+"이 중 평균 처리 시간이 가장 긴 활동을 선택하세요."
+→ 중간 결과 출력
+
+Prompt 3:
+"선택된 활동이 병목 구간인 이유를 설명하세요."
+→ 최종 답변 출력
 
 and the **generation of database queries**, 
 
