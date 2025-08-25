@@ -1,4 +1,4 @@
----
+﻿---
 title: "Leveraging Large Language Models (LLMs) for Process Mining (Technical Report)"
 layout: single
 date: 2025-08-22 10:00:00 -0400
@@ -27,7 +27,7 @@ This technical report describes the intersection of process mining and large lan
     
     - 주요 산출물(모델/뷰):
 
-        ![procedural](img/procedural_process_model.PNG)
+        ![procedural](/assets/img/procedural_process_model.PNG)
     
         - DFG (Directly-Follows Graph): A→B 엣지(빈도/시간)로 “직후(직접선행)” 관계를 요약. 병목(높은 평균 소요시간), 주경로(최빈 엣지) 파악에 유용. 
         
