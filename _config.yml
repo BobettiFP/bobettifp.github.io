@@ -10,16 +10,16 @@
 # Review documentation to determine if you should use `theme` or `remote_theme`
 # https://mmistakes.github.io/minimal-mistakes/docs/quick-start-guide/#installing-the-theme
 
-# theme                  : "minimal-mistakes-jekyll"
+theme                  : "minimal-mistakes-jekyll"
 # remote_theme           : "mmistakes/minimal-mistakes"
-minimal_mistakes_skin    : "default" # "air", "aqua", "contrast", "dark", "dirt", "neon", "mint", "plum", "sunrise"
+minimal_mistakes_skin    : "air" # "air", "aqua", "contrast", "dark", "dirt", "neon", "mint", "plum", "sunrise"
 
 # Site Settings
 locale                   : "ko-KR"
 rtl                      : # true, false (default) # turns direction of the page into right to left for RTL languages
 title                    : "Scribble"
 title_separator          : "-"
-subtitle                 : # site tagline that appears below site title in masthead
+subtitle                 : "Scribble"
 name                     : "Kim Hyegang"
 description              : "Open version of my notion."
 url                      : "https://bobettifp.github.io"
@@ -70,7 +70,7 @@ atom_feed:
   hide                   : # true, false (default)
 search                   : true
 search_full_content      : false
-search_provider          : # lunr (default), algolia, google
+search_provider          : lunr #(default), algolia, google
 lunr:
   search_within_pages    : # true, false (default)
 algolia:
@@ -117,7 +117,7 @@ author:
   avatar           : # path of avatar image, e.g. "/assets/images/bio-photo.jpg"
   bio              : "LLM · RL · Network Science · NLP"
   location         : "Seoul-Korea / Toronto-Canada"
-  email            : "bobetti219@gmail.com"
+  email            : "mailto:bobetti219@gmail.com"
   links:
     - label: "Email"
       icon: "fas fa-fw fa-envelope-square"
@@ -136,7 +136,7 @@ author:
       # url: "https://github.com/"
     - label: "Instagram"
       icon: "fab fa-fw fa-instagram"
-      # url: "https://instagram.com/"
+      url: "https://www.instagram.com/bobetti219/"
 
 # Site Footer
 footer:
@@ -158,7 +158,7 @@ footer:
     #   # url:
     - label: "Instagram"
       icon: "fab fa-fw fa-instagram"
-       url: "https://www.instagram.com/bobetti219/"
+      url: "https://www.instagram.com/bobetti219/"
   since: "2025"
 
 
@@ -229,7 +229,7 @@ sass:
 
 # Outputting
 permalink: /:categories/:title/
-timezone: "Asia/Seoul"
+timezone: "America/Toronto"
 
 
 # Pagination with jekyll-paginate
