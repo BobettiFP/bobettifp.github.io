@@ -86,9 +86,19 @@ Results indicate that these models exhibit a robust understanding of **key proce
 
 with notable proficiency in interpreting both **declarative** and **procedural process models**. 
 
-- Declarative Process Model:
+- Procedural Process Model (절차적)
+    - **정의**: 활동 간의 **순서/흐름**을 **명시적으로** 모델링한다. 모델이 허용한 경로만 유효하다.
+    - **논문 서술 맥락**: DFG로 직접선행 관계를 요약하고, Petri net/BPMN 같은 절차적 모델로 흐름을 표현한다.
+    - **예시(간단)**: `주문 접수 → 결제 처리 → 포장 준비 → 배송 시작`  
+    ← 이 경로(순서)가 모델에 정의돼 있어야 실행(trace)이 적합하다.
 
-- Procedural Process Model:
+- Declarative Process Model (선언적)
+    - **정의**: 경로를 나열하지 않고 **지켜야 할 제약(규칙)**만 명시한다. 제약을 만족하는 한 **여러 경로**가 허용된다.
+    - **논문 서술 맥락**: DECLARE 템플릿(Precedence, Response 등)로 제약을 기술한다.
+    - **예시(간단)**: `Response(주문 접수, 결제 처리)`  
+    - 의미: “**주문 접수**가 발생하면 **언젠가 결제 처리**가 뒤따라야 한다.”  
+    - 만족 예: `주문 접수 → 재고 확인 → 결제 처리 → 포장 준비`  
+    - 위반 예: `주문 접수 → 포장 준비 → 배송 시작` (결제가 뒤따르지 않음)
 
 In addition, we find that both models demonstrate strong performance in the object-centric setting, which could significantly propel the advancement of the object-centric process mining discipline.Additionally, these models display a noteworthy capacity to evaluate various concepts of fairness in process mining. 
 

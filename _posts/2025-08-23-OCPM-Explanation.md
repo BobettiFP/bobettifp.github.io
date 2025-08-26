@@ -6,9 +6,8 @@ categories: [Dictionary]
 tags: [process mining]
 author_profile: true
 ---
-## Overview
 
-Object Centric Process Mining (OCPM)과 Traditional Process Mining (DFG, Petri Net 등)의 차이는 무엇일까?
+# Object Centric Process Mining (OCPM)과 Traditional Process Mining (DFG, Petri Net 등)의 차이는 무엇일까?
 
 {% raw %}
 <div id="process-mining-root"></div>
@@ -79,7 +78,7 @@ Object Centric Process Mining (OCPM)과 Traditional Process Mining (DFG, Petri N
     const resetAnimation = () => setAnimationStep(0);
 
     return (
-      <div className="max-w-6xl mx-auto p-6 bg-white">
+      <div className="max-w-7xl mx-auto p-6 bg-white">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800 mb-4">
             프로세스 마이닝 비교: Traditional vs OCPM
