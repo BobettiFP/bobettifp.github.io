@@ -13,7 +13,13 @@ author_profile: true
 <div id="process-mining-root"></div>
 
 <!-- Tailwind (CDN, 간편용) -->
+{% raw %}
+<!-- Tailwind Preflight 끄기: 제목(h1~h6) 등 Minimal Mistakes 기본 스타일 보존 -->
+<script>
+  tailwind = { config: { corePlugins: { preflight: false } } };
+</script>
 <script src="https://cdn.tailwindcss.com"></script>
+{% endraw %}
 
 <!-- React 18 (UMD) + Babel Standalone (브라우저에서 JSX 변환) -->
 <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
