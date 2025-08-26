@@ -6,6 +6,7 @@ categories: [Literature-Review]
 tags: [process mining, llm, direct answering prompt, multi-prompt answering, database query generation]
 author_profile: true
 ---
+
 ## TL;DR
 이 기술보고서는 **프로세스 마이닝 산출물(DFG, 이벤트 로그, 프로세스 모델 등)을 텍스트로 추상화**해 LLM이 이해·추론하도록 하고, **직답(Direct), 다중 프롬프트(Multi-prompt), DB 쿼리 생성** 세 전략으로 질의·검증하는 방법을 실험한다. GPT-4와 Bard는 **절차적/선언적 모델을 꽤 잘 해석**했고, **오브젝트 중심 프로세스 마이닝**에서도 강점을 보였으며, **공정성(fairness) 평가**에도 잠재력이 확인됐다.
 
