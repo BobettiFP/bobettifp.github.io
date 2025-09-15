@@ -2,7 +2,7 @@
 title: "OCPM vs Traditional Process Mining"
 layout: single
 date: 2025-08-23 10:00:00 -0400
-categories: [Dictionary]
+categories: [Terminology]
 tags: [process mining]
 author_profile: true
 ---

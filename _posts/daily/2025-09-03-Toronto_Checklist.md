@@ -2,7 +2,7 @@
 title: "토론토 유학 체크리스트 (구매처별 정리)"
 layout: single
 date: 2025-09-03 10:00:00 -0400
-categories: [Checklist, Study-Abroad]
+categories: [Canada Life]
 tags: [Canada, Toronto, UofT, Packing, PhD]
 author_profile: true
 classes: wide

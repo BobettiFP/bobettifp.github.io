@@ -2,7 +2,7 @@
 title: "Leveraging Large Language Models (LLMs) for Process Mining (Technical Report)"
 layout: single
 date: 2025-08-22 10:00:00 -0400
-categories: [Literature-Review]
+categories: [Paper Review]
 tags: [process mining, llm, direct answering prompt, multi-prompt answering, database query generation]
 author_profile: true
 ---
