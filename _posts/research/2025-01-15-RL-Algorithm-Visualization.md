@@ -119,51 +119,67 @@ This interactive visualization helps you understand Reinforcement Learning algor
     
     // Modify the component code to make it globally available
     // Replace export default with window assignment
-    const modifiedCode = componentCode
+    let modifiedCode = componentCode
       .replace(/export\s+default\s+function\s+RLCompleteVisualization/g, 'function RLCompleteVisualization')
       .replace(/export\s+default\s+RLCompleteVisualization/g, 'RLCompleteVisualization');
     
-    // Also ensure it's available on window
-    const finalCode = modifiedCode + '\n\nwindow.RLCompleteVisualization = RLCompleteVisualization;';
+    // Remove any other export statements that might cause issues
+    modifiedCode = modifiedCode.replace(/^export\s+/gm, '');
+    
+    // Also ensure it's available on window (add at the end)
+    const finalCode = modifiedCode + '\n\nif (typeof RLCompleteVisualization !== "undefined") {\n  window.RLCompleteVisualization = RLCompleteVisualization;\n  console.log("RLCompleteVisualization assigned to window");\n} else {\n  console.error("RLCompleteVisualization function not found after processing");\n}';
     
     console.log('Modified component code, creating script element...');
     
     // Create a script element with the modified component code
-    const script = document.createElement('script');
-    script.type = 'text/babel';
-    script.text = finalCode;
-    document.body.appendChild(script);
+    const componentScript = document.createElement('script');
+    componentScript.type = 'text/babel';
+    componentScript.text = finalCode;
+    
+    document.body.appendChild(componentScript);
     
     console.log('Script element created, waiting for Babel to process...');
     
-    // Wait for Babel to process and component to be available
+    // Function to check if component is available and mount it
     let attempts = 0;
-    const maxAttempts = 50; // 5 seconds max
+    const maxAttempts = 100; // 10 seconds max (100 * 100ms)
     
-    const mountComponent = () => {
+    const checkAndMount = () => {
       attempts++;
       const Component = window.RLCompleteVisualization || (typeof RLCompleteVisualization !== 'undefined' ? RLCompleteVisualization : null);
       
       if (Component) {
-        console.log('Component found, mounting...');
+        console.log('Component found, mounting...', Component);
         try {
           const root = ReactDOM.createRoot(container);
           root.render(React.createElement(Component));
           console.log('Component mounted successfully!');
         } catch (renderError) {
           console.error('Error rendering component:', renderError);
-          showError('Error rendering component', renderError.message);
+          showError('Error rendering component', renderError.message + '\n' + renderError.stack);
         }
       } else if (attempts < maxAttempts) {
-        setTimeout(mountComponent, 100);
+        if (attempts % 10 === 0) {
+          console.log(`Still waiting for component... (attempt ${attempts}/${maxAttempts})`);
+          console.log('Available window properties:', Object.keys(window).filter(k => 
+            k.includes('RL') || k.includes('Complete') || k.includes('React') || k.includes('Viz')
+          ));
+        }
+        setTimeout(checkAndMount, 100);
       } else {
-        console.error('Available globals:', Object.keys(window).filter(k => k.includes('RL') || k.includes('Complete')));
-        showError('Component not found after processing', 'RLCompleteVisualization was not defined. Check if the component code is valid JSX.');
+        console.error('Component not found after all attempts');
+        console.log('Final check - Available window properties:', Object.keys(window).filter(k => 
+          k.includes('RL') || k.includes('Complete') || k.includes('React') || k.includes('Viz')
+        ));
+        showError('Component not found after processing', 
+          'RLCompleteVisualization was not defined after ' + maxAttempts + ' attempts. ' +
+          'The component code may have syntax errors. Check the browser console for Babel errors.');
       }
     };
     
-    // Start trying to mount after a short delay
-    setTimeout(mountComponent, 300);
+    // Start checking after Babel processes (Babel processes when script is added to DOM)
+    // Give it a moment to process
+    setTimeout(checkAndMount, 200);
     
   } catch (error) {
     showError(error.message, error.stack);
