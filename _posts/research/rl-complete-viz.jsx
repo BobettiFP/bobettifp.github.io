@@ -638,6 +638,7 @@ const DPViz = () => {
   const [highlightCell, setHighlightCell] = useState(null);
   const [showCalculation, setShowCalculation] = useState(null);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [valueHistory, setValueHistory] = useState([]);
   
   const gamma = 0.9;
   const goalPos = { row: 3, col: 3 };
@@ -686,6 +687,10 @@ const DPViz = () => {
         newGrid[r][c] = newValue;
       }
     }
+    
+    // Store value history for convergence visualization
+    const flatValues = newGrid.flat();
+    setValueHistory(prev => [...prev.slice(-20), flatValues]);
     
     setGrid(newGrid);
     setHighlightCell(null);
@@ -752,6 +757,7 @@ const DPViz = () => {
     setPhase('evaluation');
     setHighlightCell(null);
     setShowCalculation(null);
+    setValueHistory([]);
   };
 
   return (
@@ -807,6 +813,71 @@ const DPViz = () => {
           2. Policy Improvement (π 개선)
         </div>
       </div>
+
+      {/* 3Blue1Brown Style: Value Convergence Visualization */}
+      {valueHistory.length > 1 && (
+        <div style={{ 
+          marginBottom: '25px',
+          background: 'rgba(0,0,0,0.3)',
+          borderRadius: '15px',
+          padding: '20px'
+        }}>
+          <h3 style={{ marginBottom: '15px', color: '#4ECDC4', fontSize: '14px', textAlign: 'center' }}>
+            Value Convergence: ||V_{k+1} - V_k||
+          </h3>
+          <svg style={{ width: '100%', height: '200px' }}>
+            {/* Y axis */}
+            <line x1="50" y1="20" x2="50" y2="180" stroke="rgba(255,255,255,0.3)" strokeWidth="2" />
+            {/* X axis */}
+            <line x1="50" y1="180" x2="950" y2="180" stroke="rgba(255,255,255,0.3)" strokeWidth="2" />
+            
+            {/* Convergence line */}
+            {valueHistory.slice(1).map((vals, i) => {
+              const prevVals = valueHistory[i];
+              const diff = Math.sqrt(vals.reduce((sum, v, idx) => sum + Math.pow(v - prevVals[idx], 2), 0));
+              const x = 50 + (i * 900 / Math.max(1, valueHistory.length - 2));
+              const y = 180 - (Math.min(diff * 10, 150));
+              return (
+                <circle
+                  key={i}
+                  cx={x}
+                  cy={y}
+                  r="4"
+                  fill="#4ECDC4"
+                  style={{ transition: 'all 0.3s' }}
+                />
+              );
+            })}
+            
+            {/* Connect points */}
+            {valueHistory.slice(1).map((vals, i) => {
+              if (i === 0) return null;
+              const prevVals = valueHistory[i-1];
+              const prevDiff = Math.sqrt(prevVals.reduce((sum, v, idx) => sum + Math.pow(v - (valueHistory[i-1]?.[idx] || 0), 2), 0));
+              const diff = Math.sqrt(vals.reduce((sum, v, idx) => sum + Math.pow(v - prevVals[idx], 2), 0));
+              const x1 = 50 + ((i-1) * 900 / Math.max(1, valueHistory.length - 2));
+              const y1 = 180 - (Math.min(prevDiff * 10, 150));
+              const x2 = 50 + (i * 900 / Math.max(1, valueHistory.length - 2));
+              const y2 = 180 - (Math.min(diff * 10, 150));
+              return (
+                <line
+                  key={`line-${i}`}
+                  x1={x1}
+                  y1={y1}
+                  x2={x2}
+                  y2={y2}
+                  stroke="#4ECDC4"
+                  strokeWidth="2"
+                  opacity="0.6"
+                />
+              );
+            })}
+            
+            <text x="25" y="100" fill="rgba(255,255,255,0.7)" fontSize="12" transform="rotate(-90 25 100)">||ΔV||</text>
+            <text x="500" y="195" fill="rgba(255,255,255,0.7)" fontSize="12" textAnchor="middle">Iteration</text>
+          </svg>
+        </div>
+      )}
 
       <div style={{ display: 'flex', gap: '30px', justifyContent: 'center', flexWrap: 'wrap' }}>
         {/* Value Grid */}
@@ -1025,6 +1096,7 @@ const MCViz = ({ onShowComparison }) => {
   const [stateValues, setStateValues] = useState({});
   const [phase, setPhase] = useState('idle');
   const [highlightStep, setHighlightStep] = useState(-1);
+  const [returnVisualization, setReturnVisualization] = useState(null);
   
   const gamma = 0.9;
   const goalPos = { row: 3, col: 3 };
@@ -1071,15 +1143,20 @@ const MCViz = ({ onShowComparison }) => {
     setPhase('calculating');
     const updated = [...episode];
     let G = 0;
+    const returnSteps = [];
     
     for (let t = episode.length - 1; t >= 0; t--) {
+      const prevG = G;
       G = episode[t].reward + gamma * G;
       updated[t].returnValue = G;
+      returnSteps.push({ t, reward: episode[t].reward, prevG, newG: G, gamma });
+      setReturnVisualization({ t, reward: episode[t].reward, prevG, newG: G, gamma });
       setHighlightStep(t);
       setCurrentEpisode([...updated]);
       await new Promise(resolve => setTimeout(resolve, 400));
     }
     
+    setReturnVisualization(null);
     return updated;
   }, [gamma]);
 
@@ -1122,6 +1199,7 @@ const MCViz = ({ onShowComparison }) => {
     setStateValues({});
     setPhase('idle');
     setHighlightStep(-1);
+    setReturnVisualization(null);
   };
 
   return (
@@ -1178,6 +1256,84 @@ const MCViz = ({ onShowComparison }) => {
           </div>
         ))}
       </div>
+
+      {/* 3Blue1Brown Style: Return Calculation Visualization */}
+      {returnVisualization && phase === 'calculating' && (
+        <div style={{ 
+          marginBottom: '25px',
+          background: 'rgba(0,0,0,0.3)',
+          borderRadius: '15px',
+          padding: '20px'
+        }}>
+          <h3 style={{ marginBottom: '15px', color: '#F7DC6F', fontSize: '14px', textAlign: 'center' }}>
+            Return Calculation: G_t = R_t + γ·G_{t+1}
+          </h3>
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '30px', height: '150px' }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '12px', opacity: 0.7, marginBottom: '5px' }}>R_t</div>
+              <div style={{ 
+                width: '60px', 
+                height: '60px', 
+                background: 'rgba(255,107,107,0.3)',
+                borderRadius: '10px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '24px',
+                fontWeight: 'bold',
+                color: '#FF6B6B',
+                border: '2px solid #FF6B6B'
+              }}>
+                {returnVisualization.reward.toFixed(1)}
+              </div>
+            </div>
+            
+            <div style={{ fontSize: '30px', color: '#fff' }}>+</div>
+            
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '12px', opacity: 0.7, marginBottom: '5px' }}>γ·G_{t+1}</div>
+              <div style={{ 
+                width: '60px', 
+                height: '60px', 
+                background: 'rgba(69,183,209,0.3)',
+                borderRadius: '10px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '20px',
+                fontWeight: 'bold',
+                color: '#45B7D1',
+                border: '2px solid #45B7D1'
+              }}>
+                {gamma}×{returnVisualization.prevG.toFixed(2)}
+              </div>
+            </div>
+            
+            <div style={{ fontSize: '30px', color: '#fff' }}>=</div>
+            
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '12px', opacity: 0.7, marginBottom: '5px' }}>G_t</div>
+              <div style={{ 
+                width: '80px', 
+                height: '80px', 
+                background: 'rgba(247,220,111,0.4)',
+                borderRadius: '12px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '28px',
+                fontWeight: 'bold',
+                color: '#F7DC6F',
+                border: '3px solid #F7DC6F',
+                boxShadow: '0 0 20px rgba(247,220,111,0.5)',
+                transition: 'all 0.3s'
+              }}>
+                {returnVisualization.newG.toFixed(2)}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div style={{ display: 'flex', gap: '25px', justifyContent: 'center', flexWrap: 'wrap' }}>
         {/* Grid */}
@@ -1478,6 +1634,82 @@ const TDViz = ({ onShowComparison }) => {
           <strong>Trade-off:</strong> Slightly biased (uses estimates), but much faster learning.
         </p>
       </ExplanationPanel>
+
+      {/* 3Blue1Brown Style: TD Error Vector Visualization */}
+      {lastUpdate && (
+        <div style={{ 
+          marginBottom: '25px',
+          background: 'rgba(0,0,0,0.3)',
+          borderRadius: '15px',
+          padding: '20px'
+        }}>
+          <h3 style={{ marginBottom: '15px', color: '#96CEB4', fontSize: '14px', textAlign: 'center' }}>
+            TD Error: δ = R + γV(s') - V(s)
+          </h3>
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '20px', height: '120px' }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '11px', opacity: 0.7 }}>R</div>
+              <div style={{ 
+                padding: '10px 15px',
+                background: 'rgba(255,107,107,0.3)',
+                borderRadius: '8px',
+                fontSize: '18px',
+                fontWeight: 'bold',
+                color: '#FF6B6B',
+                border: '2px solid #FF6B6B'
+              }}>
+                {lastUpdate.reward}
+              </div>
+            </div>
+            <div style={{ fontSize: '24px' }}>+</div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '11px', opacity: 0.7 }}>γ·V(s')</div>
+              <div style={{ 
+                padding: '10px 15px',
+                background: 'rgba(69,183,209,0.3)',
+                borderRadius: '8px',
+                fontSize: '16px',
+                fontWeight: 'bold',
+                color: '#45B7D1',
+                border: '2px solid #45B7D1'
+              }}>
+                {gamma}×{lastUpdate.nextValue.toFixed(2)}
+              </div>
+            </div>
+            <div style={{ fontSize: '24px' }}>-</div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '11px', opacity: 0.7 }}>V(s)</div>
+              <div style={{ 
+                padding: '10px 15px',
+                background: 'rgba(150,206,180,0.3)',
+                borderRadius: '8px',
+                fontSize: '16px',
+                fontWeight: 'bold',
+                color: '#96CEB4',
+                border: '2px solid #96CEB4'
+              }}>
+                {lastUpdate.oldValue.toFixed(2)}
+              </div>
+            </div>
+            <div style={{ fontSize: '24px' }}>=</div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '11px', opacity: 0.7 }}>δ (TD Error)</div>
+              <div style={{ 
+                padding: '15px 20px',
+                background: lastUpdate.tdError > 0 ? 'rgba(78,205,196,0.4)' : 'rgba(231,76,60,0.4)',
+                borderRadius: '10px',
+                fontSize: '24px',
+                fontWeight: 'bold',
+                color: lastUpdate.tdError > 0 ? '#4ECDC4' : '#E74C3C',
+                border: `3px solid ${lastUpdate.tdError > 0 ? '#4ECDC4' : '#E74C3C'}`,
+                boxShadow: `0 0 20px ${lastUpdate.tdError > 0 ? 'rgba(78,205,196,0.5)' : 'rgba(231,76,60,0.5)'}`
+              }}>
+                {lastUpdate.tdError > 0 ? '+' : ''}{lastUpdate.tdError.toFixed(3)}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div style={{ display: 'flex', gap: '25px', justifyContent: 'center', flexWrap: 'wrap' }}>
         {/* Grid */}
@@ -2101,6 +2333,7 @@ const DQNViz = () => {
   const [step, setStep] = useState(0);
   const [lastLoss, setLastLoss] = useState(null);
   const [epsilon, setEpsilon] = useState(1.0);
+  const [weightUpdate, setWeightUpdate] = useState(null);
 
   const getQValues = (state, network) => {
     return [
@@ -2146,7 +2379,21 @@ const DQNViz = () => {
       totalLoss += loss;
       
       // Simple gradient update
-      newW[exp.action] += 0.01 * (target - currentQ);
+      const update = 0.01 * (target - currentQ);
+      newW[exp.action] += update;
+      
+      // Store update info for visualization
+      if (!weightUpdate || exp.action === weightUpdate.action) {
+        setWeightUpdate({
+          action: exp.action,
+          oldWeight: qNetwork.w[exp.action],
+          update,
+          newWeight: newW[exp.action],
+          target,
+          currentQ,
+          error: target - currentQ
+        });
+      }
     });
     
     setQNetwork({ w: newW });
@@ -2166,6 +2413,7 @@ const DQNViz = () => {
     setSyncStep(0);
     setEpsilon(1.0);
     setLastLoss(null);
+    setWeightUpdate(null);
   };
 
   return (
@@ -2201,6 +2449,70 @@ const DQNViz = () => {
           These tricks solve the "Deadly Triad" problem, making deep RL stable and practical!
         </p>
       </ExplanationPanel>
+
+      {/* 3Blue1Brown Style: Q-Learning Update Visualization */}
+      {weightUpdate && (
+        <div style={{ 
+          marginBottom: '25px',
+          background: 'rgba(0,0,0,0.3)',
+          borderRadius: '15px',
+          padding: '20px'
+        }}>
+          <h3 style={{ marginBottom: '15px', color: '#DDA0DD', fontSize: '14px', textAlign: 'center' }}>
+            Q-Learning Update: Q(s,a) ← Q(s,a) + α[r + γmax Q(s',a') - Q(s,a)]
+          </h3>
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '15px', height: '120px' }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '11px', opacity: 0.7 }}>Q(s,a)</div>
+              <div style={{ 
+                padding: '10px 15px',
+                background: 'rgba(221,160,221,0.3)',
+                borderRadius: '8px',
+                fontSize: '18px',
+                fontWeight: 'bold',
+                color: '#DDA0DD',
+                border: '2px solid #DDA0DD'
+              }}>
+                {weightUpdate.currentQ.toFixed(2)}
+              </div>
+            </div>
+            <div style={{ fontSize: '24px' }}>+</div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '11px', opacity: 0.7 }}>α·δ</div>
+              <div style={{ 
+                padding: '10px 15px',
+                background: 'rgba(102,126,234,0.3)',
+                borderRadius: '8px',
+                fontSize: '16px',
+                fontWeight: 'bold',
+                color: '#667eea',
+                border: '2px solid #667eea'
+              }}>
+                0.01×{weightUpdate.error.toFixed(2)}
+              </div>
+            </div>
+            <div style={{ fontSize: '24px' }}>=</div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '11px', opacity: 0.7 }}>Q_new(s,a)</div>
+              <div style={{ 
+                padding: '15px 20px',
+                background: 'rgba(221,160,221,0.4)',
+                borderRadius: '10px',
+                fontSize: '24px',
+                fontWeight: 'bold',
+                color: '#DDA0DD',
+                border: '3px solid #DDA0DD',
+                boxShadow: '0 0 20px rgba(221,160,221,0.5)'
+              }}>
+                {weightUpdate.newWeight.toFixed(3)}
+              </div>
+            </div>
+          </div>
+          <div style={{ textAlign: 'center', marginTop: '10px', fontSize: '12px', opacity: 0.7 }}>
+            Target: {weightUpdate.target.toFixed(2)} | Error: {weightUpdate.error > 0 ? '+' : ''}{weightUpdate.error.toFixed(3)}
+          </div>
+        </div>
+      )}
 
       <div style={{ display: 'flex', gap: '20px', justifyContent: 'center', flexWrap: 'wrap' }}>
         {/* Networks */}
@@ -2343,6 +2655,7 @@ const MCTSViz = () => {
   });
   const [selectedPath, setSelectedPath] = useState(['root']);
   const [phase, setPhase] = useState('select');
+  const [ucbCalculation, setUcbCalculation] = useState(null);
 
   const ucb = (node, parent) => {
     if (node.visits === 0) return Infinity;
@@ -2362,14 +2675,17 @@ const MCTSViz = () => {
       while (node.children.length > 0) {
         let bestChild = node.children[0];
         let bestUCB = -Infinity;
+        const ucbValues = [];
         
         for (const child of node.children) {
           const u = ucb(child, node);
+          ucbValues.push({ child: child.id, q: child.visits > 0 ? child.value / child.visits : 0, n: child.visits, ucb: u });
           if (u > bestUCB) {
             bestUCB = u;
             bestChild = child;
           }
         }
+        setUcbCalculation({ node: node.id, ucbValues, best: bestChild.id, bestUCB });
         node = bestChild;
         path.push(node.id);
       }
@@ -2414,6 +2730,7 @@ const MCTSViz = () => {
     setTree({ id: 'root', visits: 1, value: 0, children: [], expanded: true });
     setSelectedPath(['root']);
     setPhase('select');
+    setUcbCalculation(null);
   };
 
   const renderNode = (node, depth = 0) => {
@@ -2501,6 +2818,48 @@ const MCTSViz = () => {
         ))}
       </div>
 
+      {/* 3Blue1Brown Style: UCB Calculation Visualization */}
+      {ucbCalculation && phase === 'select' && (
+        <div style={{ 
+          marginBottom: '25px',
+          background: 'rgba(0,0,0,0.3)',
+          borderRadius: '15px',
+          padding: '20px'
+        }}>
+          <h3 style={{ marginBottom: '15px', color: '#98D8C8', fontSize: '14px', textAlign: 'center' }}>
+            UCB Formula: Q/N + c·√(log(P)/N)
+          </h3>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', flexWrap: 'wrap' }}>
+            {ucbCalculation.ucbValues.map((ucb, i) => (
+              <div key={i} style={{
+                background: ucb.child === ucbCalculation.best ? 'rgba(152,216,200,0.3)' : 'rgba(255,255,255,0.05)',
+                borderRadius: '10px',
+                padding: '15px',
+                border: ucb.child === ucbCalculation.best ? '2px solid #98D8C8' : '1px solid rgba(255,255,255,0.2)',
+                minWidth: '150px'
+              }}>
+                <div style={{ fontSize: '12px', fontWeight: 'bold', marginBottom: '8px', color: '#98D8C8' }}>
+                  {ucb.child} {ucb.child === ucbCalculation.best && '✓'}
+                </div>
+                <div style={{ fontSize: '11px', opacity: 0.7, marginBottom: '5px' }}>Q/N = {ucb.q.toFixed(2)}</div>
+                <div style={{ fontSize: '11px', opacity: 0.7, marginBottom: '5px' }}>c·√(log(P)/N) = {Math.sqrt(2) * Math.sqrt(Math.log(ucbCalculation.ucbValues.length) / Math.max(1, ucb.n)).toFixed(3)}</div>
+                <div style={{ 
+                  fontSize: '16px', 
+                  fontWeight: 'bold', 
+                  color: ucb.child === ucbCalculation.best ? '#98D8C8' : '#fff',
+                  marginTop: '8px',
+                  padding: '5px',
+                  background: ucb.child === ucbCalculation.best ? 'rgba(152,216,200,0.2)' : 'transparent',
+                  borderRadius: '5px'
+                }}>
+                  UCB = {ucb.ucb.toFixed(3)}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Tree */}
       <div style={{ 
         background: 'rgba(0,0,0,0.3)',
@@ -2559,6 +2918,8 @@ const PGViz = () => {
   const [trajectories, setTrajectories] = useState([]);
   const [currentTraj, setCurrentTraj] = useState(null);
   const [baseline, setBaseline] = useState(0);
+  const [policyHistory, setPolicyHistory] = useState([[0.33, 0.33, 0.34]]);
+  const [gradientInfo, setGradientInfo] = useState(null);
   
   const rewards = [1, 3, 2]; // Expected reward for each action
 
@@ -2599,14 +2960,21 @@ const PGViz = () => {
     const advantage = currentTraj.totalReturn - baseline;
     
     const newPolicy = [...policy];
+    const gradients = [];
     currentTraj.forEach(step => {
       // REINFORCE: increase prob of actions that led to high return
-      newPolicy[step.action] += alpha * advantage * policy[step.action];
+      const gradient = alpha * advantage * policy[step.action];
+      newPolicy[step.action] += gradient;
+      gradients.push({ action: step.action, gradient, advantage });
     });
+    
+    setGradientInfo({ advantage, gradients, oldPolicy: [...policy] });
     
     // Normalize
     const sum = newPolicy.reduce((a, b) => Math.max(0.01, a) + Math.max(0.01, b), 0);
-    setPolicy(newPolicy.map(p => Math.max(0.01, p) / sum));
+    const normalized = newPolicy.map(p => Math.max(0.01, p) / sum);
+    setPolicy(normalized);
+    setPolicyHistory(prev => [...prev.slice(-20), normalized]);
   };
 
   const reset = () => {
@@ -2614,6 +2982,8 @@ const PGViz = () => {
     setTrajectories([]);
     setCurrentTraj(null);
     setBaseline(0);
+    setPolicyHistory([[0.33, 0.33, 0.34]]);
+    setGradientInfo(null);
   };
 
   return (
@@ -2645,6 +3015,75 @@ const PGViz = () => {
           <strong>Challenge:</strong> High variance. Use baseline (like V(s)) to reduce variance!
         </p>
       </ExplanationPanel>
+
+      {/* 3Blue1Brown Style: Policy Gradient Update Visualization */}
+      {gradientInfo && (
+        <div style={{ 
+          marginBottom: '25px',
+          background: 'rgba(0,0,0,0.3)',
+          borderRadius: '15px',
+          padding: '20px'
+        }}>
+          <h3 style={{ marginBottom: '15px', color: '#F7DC6F', fontSize: '14px', textAlign: 'center' }}>
+            Policy Gradient: ∇J(θ) = E[G_t · ∇log π_θ(a_t|s_t)]
+          </h3>
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '11px', opacity: 0.7, marginBottom: '5px' }}>Advantage</div>
+              <div style={{ 
+                padding: '12px 18px',
+                background: gradientInfo.advantage > 0 ? 'rgba(78,205,196,0.3)' : 'rgba(231,76,60,0.3)',
+                borderRadius: '8px',
+                fontSize: '20px',
+                fontWeight: 'bold',
+                color: gradientInfo.advantage > 0 ? '#4ECDC4' : '#E74C3C',
+                border: `2px solid ${gradientInfo.advantage > 0 ? '#4ECDC4' : '#E74C3C'}`
+              }}>
+                {gradientInfo.advantage > 0 ? '+' : ''}{gradientInfo.advantage.toFixed(2)}
+              </div>
+            </div>
+            <div style={{ fontSize: '24px' }}>×</div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '11px', opacity: 0.7, marginBottom: '5px' }}>∇log π(a|s)</div>
+              <div style={{ 
+                padding: '12px 18px',
+                background: 'rgba(247,220,111,0.3)',
+                borderRadius: '8px',
+                fontSize: '18px',
+                fontWeight: 'bold',
+                color: '#F7DC6F',
+                border: '2px solid #F7DC6F'
+              }}>
+                {gradientInfo.gradients.map((g, i) => (
+                  <div key={i} style={{ fontSize: '12px', marginTop: i > 0 ? '5px' : 0 }}>
+                    a{g.action}: {g.gradient > 0 ? '+' : ''}{g.gradient.toFixed(3)}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div style={{ fontSize: '24px' }}>=</div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '11px', opacity: 0.7, marginBottom: '5px' }}>Policy Update</div>
+              <div style={{ 
+                padding: '15px 20px',
+                background: 'rgba(247,220,111,0.4)',
+                borderRadius: '10px',
+                fontSize: '16px',
+                fontWeight: 'bold',
+                color: '#F7DC6F',
+                border: '3px solid #F7DC6F',
+                boxShadow: '0 0 20px rgba(247,220,111,0.5)'
+              }}>
+                {policy.map((p, i) => (
+                  <div key={i} style={{ fontSize: '14px', marginTop: i > 0 ? '5px' : 0 }}>
+                    π(a{i}): {(p * 100).toFixed(1)}%
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div style={{ display: 'flex', gap: '30px', justifyContent: 'center', flexWrap: 'wrap' }}>
         {/* Policy visualization */}
@@ -2885,6 +3324,70 @@ const RLHFViz = () => {
           This is the core training method behind ChatGPT, Claude, and other modern AI assistants!
         </p>
       </ExplanationPanel>
+
+      {/* 3Blue1Brown Style: RLHF Objective Visualization */}
+      <div style={{ 
+        marginBottom: '25px',
+        background: 'rgba(0,0,0,0.3)',
+        borderRadius: '15px',
+        padding: '20px'
+      }}>
+        <h3 style={{ marginBottom: '15px', color: '#BB8FCE', fontSize: '14px', textAlign: 'center' }}>
+          RLHF Objective: max E[r(y)] - β·KL(π||π_ref)
+        </h3>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '20px', height: '150px' }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '11px', opacity: 0.7, marginBottom: '5px' }}>E[r(y)]</div>
+            <div style={{ 
+              padding: '15px 20px',
+              background: 'rgba(78,205,196,0.3)',
+              borderRadius: '10px',
+              fontSize: '24px',
+              fontWeight: 'bold',
+              color: '#4ECDC4',
+              border: '3px solid #4ECDC4',
+              boxShadow: '0 0 15px rgba(78,205,196,0.4)'
+            }}>
+              {responses.reduce((s, r) => s + r.prob * r.reward, 0).toFixed(3)}
+            </div>
+          </div>
+          <div style={{ fontSize: '30px', color: '#fff' }}>-</div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '11px', opacity: 0.7, marginBottom: '5px' }}>β·KL(π||π_ref)</div>
+            <div style={{ 
+              padding: '15px 20px',
+              background: kl > 0.5 ? 'rgba(231,76,60,0.3)' : 'rgba(247,220,111,0.3)',
+              borderRadius: '10px',
+              fontSize: '20px',
+              fontWeight: 'bold',
+              color: kl > 0.5 ? '#E74C3C' : '#F7DC6F',
+              border: `3px solid ${kl > 0.5 ? '#E74C3C' : '#F7DC6F'}`,
+              boxShadow: `0 0 15px ${kl > 0.5 ? 'rgba(231,76,60,0.4)' : 'rgba(247,220,111,0.4)'}`
+            }}>
+              {beta.toFixed(2)}×{kl.toFixed(3)}
+            </div>
+          </div>
+          <div style={{ fontSize: '30px', color: '#fff' }}>=</div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '11px', opacity: 0.7, marginBottom: '5px' }}>Objective</div>
+            <div style={{ 
+              padding: '20px 25px',
+              background: 'rgba(187,143,206,0.4)',
+              borderRadius: '12px',
+              fontSize: '28px',
+              fontWeight: 'bold',
+              color: '#BB8FCE',
+              border: '3px solid #BB8FCE',
+              boxShadow: '0 0 20px rgba(187,143,206,0.6)'
+            }}>
+              {objective.toFixed(3)}
+            </div>
+          </div>
+        </div>
+        <div style={{ textAlign: 'center', marginTop: '15px', fontSize: '12px', opacity: 0.7 }}>
+          Trade-off: Higher β → Stay closer to π_ref (safer) | Lower β → Maximize reward (riskier)
+        </div>
+      </div>
 
       <div style={{ display: 'flex', gap: '25px', justifyContent: 'center', flexWrap: 'wrap' }}>
         {/* Response probabilities */}
