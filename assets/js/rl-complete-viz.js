@@ -4020,13 +4020,10 @@ export default function RLCompleteVisualization() {
         >
           🎓 Start Tour
         </button>
-        <h1 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '8px', opacity: 0.95 }}>
-          🎬 Complete RL Algorithm Visualization
-        </h1>
         <div style={{ 
           position: 'absolute',
-          top: '25px',
-          right: '20px',
+          top: '20px',
+          left: '20px',
           fontSize: '11px',
           opacity: 0.6,
           color: '#fff',
@@ -4038,6 +4035,9 @@ export default function RLCompleteVisualization() {
         }}>
           v1.03
         </div>
+        <h1 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '8px', opacity: 0.95 }}>
+          🎬 Complete RL Algorithm Visualization
+        </h1>
         <p style={{ opacity: 0.7, fontSize: '14px', marginBottom: '10px' }}>
           MDP → DP → MC → TD → FA → DQN → MCTS → PG → RLHF
         </p>
