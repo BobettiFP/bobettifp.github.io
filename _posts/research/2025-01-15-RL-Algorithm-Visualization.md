@@ -117,17 +117,30 @@ This interactive visualization helps you understand Reinforcement Learning algor
     
     console.log('Script element created, waiting for Babel to process...');
     
-    // Modify the component code to make it globally available
-    // Replace export default with window assignment
-    let modifiedCode = componentCode
+    // Modify the component code to make it work with Babel Standalone
+    // 1. Remove all import statements (React is already loaded globally)
+    let modifiedCode = componentCode.replace(/^import\s+.*?from\s+['"].*?['"];?\s*$/gm, '');
+    
+    // 2. Replace export default with regular function declaration
+    modifiedCode = modifiedCode
       .replace(/export\s+default\s+function\s+RLCompleteVisualization/g, 'function RLCompleteVisualization')
       .replace(/export\s+default\s+RLCompleteVisualization/g, 'RLCompleteVisualization');
     
-    // Remove any other export statements that might cause issues
+    // 3. Remove any other export statements
     modifiedCode = modifiedCode.replace(/^export\s+/gm, '');
     
-    // Also ensure it's available on window (add at the end)
-    const finalCode = modifiedCode + '\n\nif (typeof RLCompleteVisualization !== "undefined") {\n  window.RLCompleteVisualization = RLCompleteVisualization;\n  console.log("RLCompleteVisualization assigned to window");\n} else {\n  console.error("RLCompleteVisualization function not found after processing");\n}';
+    // 4. Extract React hooks to make them available (since import was removed)
+    // Add polyfill at the top to destructure hooks from React
+    const hookPolyfill = `
+// Extract React hooks (since we removed the import)
+const { useState, useEffect, useCallback, useRef, useMemo, useContext, useReducer } = React;
+`;
+    
+    // 5. Also ensure it's available on window (add at the end)
+    const finalCode = hookPolyfill + modifiedCode + '\n\nif (typeof RLCompleteVisualization !== "undefined") {\n  window.RLCompleteVisualization = RLCompleteVisualization;\n  console.log("RLCompleteVisualization assigned to window");\n} else {\n  console.error("RLCompleteVisualization function not found after processing");\n}';
+    
+    console.log('Code modifications applied. Final code length:', finalCode.length);
+    console.log('First 500 chars of modified code:', finalCode.substring(0, 500));
     
     console.log('Modified component code, creating script element...');
     
@@ -136,9 +149,34 @@ This interactive visualization helps you understand Reinforcement Learning algor
     componentScript.type = 'text/babel';
     componentScript.text = finalCode;
     
-    document.body.appendChild(componentScript);
+    // Add error handler to catch Babel compilation errors
+    componentScript.onerror = (error) => {
+      console.error('Script execution error:', error);
+      showError('Script execution error', 'There was an error executing the component code. Check console for details.');
+    };
     
-    console.log('Script element created, waiting for Babel to process...');
+    // Wrap in try-catch for immediate errors
+    try {
+      document.body.appendChild(componentScript);
+      console.log('Script element created, waiting for Babel to process...');
+    } catch (error) {
+      console.error('Error appending script:', error);
+      showError('Error loading script', error.message);
+      return;
+    }
+    
+    // Also listen for any unhandled errors that might occur during Babel processing
+    const originalErrorHandler = window.onerror;
+    window.onerror = (msg, url, line, col, error) => {
+      if (url && url.includes('Babel') || msg.includes('Babel') || msg.includes('RLComplete')) {
+        console.error('Babel/Component error:', msg, 'at', url, line, col, error);
+        showError('Component compilation error', msg + ' (Check console for details)');
+      }
+      if (originalErrorHandler) {
+        return originalErrorHandler(msg, url, line, col, error);
+      }
+      return false;
+    };
     
     // Function to check if component is available and mount it
     let attempts = 0;
