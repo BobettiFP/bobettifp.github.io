@@ -144,12 +144,16 @@ const { useState, useEffect, useCallback, useRef, useMemo, useContext, useReduce
     
     console.log('Modified component code, creating script element...');
     
-    // Try to use Babel.transform directly if available for better error handling
+    // Try Babel.transform first (faster), fallback to script tag method
     if (typeof Babel !== 'undefined' && Babel.transform) {
-      console.log('Using Babel.transform directly...');
+      console.log('Using Babel.transform with safe options...');
       try {
         const transformed = Babel.transform(finalCode, {
-          presets: ['react']
+          presets: [['react', { runtime: 'classic' }]], // Use classic runtime
+          compact: false,  // Don't minify - preserves variable names
+          minified: false, // Don't minify
+          retainLines: false,
+          comments: false
         });
         console.log('Babel transformation successful, code length:', transformed.code.length);
         
@@ -158,43 +162,34 @@ const { useState, useEffect, useCallback, useRef, useMemo, useContext, useReduce
         execScript.text = transformed.code;
         document.body.appendChild(execScript);
         
-        console.log('Transformed code executed, checking for component...');
-        // Give it a moment to execute
-        setTimeout(() => {
-          if (window.RLCompleteVisualization) {
-            console.log('Component found via Babel.transform!');
-          } else {
-            console.warn('Component not found after Babel.transform execution');
-          }
-        }, 100);
+        console.log('Transformed code executed via Babel.transform');
       } catch (babelError) {
         console.error('Babel transformation error:', babelError);
-        showError('Babel compilation error', babelError.message + (babelError.stack ? '\n' + babelError.stack : ''));
-        return;
+        // Fall through to script tag method
+        console.log('Falling back to script tag method...');
       }
-    } else {
-      console.log('Babel.transform not available, using script tag method...');
-      
-      // Create a script element with the modified component code
-      const componentScript = document.createElement('script');
-      componentScript.type = 'text/babel';
-      componentScript.text = finalCode;
-      
-      // Add error handler to catch Babel compilation errors
-      componentScript.onerror = (error) => {
-        console.error('Script execution error:', error);
-        showError('Script execution error', 'There was an error executing the component code. Check console for details.');
-      };
-      
-      // Wrap in try-catch for immediate errors
-      try {
-        document.body.appendChild(componentScript);
-        console.log('Script element created, waiting for Babel to process...');
-      } catch (error) {
-        console.error('Error appending script:', error);
-        showError('Error loading script', error.message);
-        return;
-      }
+    }
+    
+    // Also use script tag method as backup or primary method
+    // Babel Standalone will process script tags with type="text/babel" automatically
+    console.log('Using script tag method (Babel Standalone auto-processes)...');
+    
+    const componentScript = document.createElement('script');
+    componentScript.type = 'text/babel';
+    componentScript.text = finalCode;
+    
+    componentScript.onerror = (error) => {
+      console.error('Script execution error:', error);
+      showError('Script execution error', 'There was an error executing the component code.');
+    };
+    
+    try {
+      document.body.appendChild(componentScript);
+      console.log('Script element created, Babel Standalone will process it automatically...');
+    } catch (error) {
+      console.error('Error appending script:', error);
+      showError('Error loading script', error.message);
+      return;
     }
     
     // Also listen for any unhandled errors that might occur during Babel processing
@@ -226,8 +221,51 @@ const { useState, useEffect, useCallback, useRef, useMemo, useContext, useReduce
       if (Component && typeof Component === 'function') {
         console.log('Component found, mounting...', Component);
         try {
+          // Create an error boundary wrapper
+          class ErrorBoundary extends React.Component {
+            constructor(props) {
+              super(props);
+              this.state = { hasError: false, error: null };
+            }
+            
+            static getDerivedStateFromError(error) {
+              return { hasError: true, error };
+            }
+            
+            componentDidCatch(error, errorInfo) {
+              console.error('Component error caught:', error, errorInfo);
+            }
+            
+            render() {
+              if (this.state.hasError) {
+                return React.createElement('div', {
+                  style: {
+                    padding: '20px',
+                    background: 'rgba(255,0,0,0.1)',
+                    borderRadius: '8px',
+                    color: '#fff'
+                  }
+                }, [
+                  React.createElement('h3', { key: 'title' }, 'Error in component'),
+                  React.createElement('p', { key: 'msg' }, this.state.error?.message || 'Unknown error'),
+                  React.createElement('details', { key: 'details' },
+                    React.createElement('summary', null, 'Stack trace'),
+                    React.createElement('pre', { style: { fontSize: '12px', overflow: 'auto' } },
+                      this.state.error?.stack || 'No stack trace available'
+                    )
+                  )
+                ]);
+              }
+              return this.props.children;
+            }
+          }
+          
           const root = ReactDOM.createRoot(container);
-          root.render(React.createElement(Component));
+          root.render(
+            React.createElement(ErrorBoundary, null,
+              React.createElement(Component)
+            )
+          );
           console.log('Component mounted successfully!');
           return; // Success, stop checking
         } catch (renderError) {

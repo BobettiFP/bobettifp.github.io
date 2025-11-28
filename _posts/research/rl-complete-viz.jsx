@@ -1687,6 +1687,8 @@ const FAViz = () => {
   const [iteration, setIteration] = useState(0);
   const [currentSample, setCurrentSample] = useState(null);
   const [loss, setLoss] = useState(0);
+  const [weightHistory, setWeightHistory] = useState([[0.5, 0.5]]);
+  const [gradientVector, setGradientVector] = useState(null);
   
   const alpha = 0.01;
   const trueW = [2, 0.8]; // True weights
@@ -1717,10 +1719,18 @@ const FAViz = () => {
     const error = sample.target - predictValue(sample.state, weights);
     const feat = features(sample.state);
     
-    setWeights(prev => [
-      prev[0] + alpha * error * feat[0],
-      prev[1] + alpha * error * feat[1]
-    ]);
+    // Calculate gradient vector for visualization
+    const grad = [alpha * error * feat[0], alpha * error * feat[1]];
+    setGradientVector({ x: grad[0], y: grad[1], magnitude: Math.sqrt(grad[0]**2 + grad[1]**2) });
+    
+    setWeights(prev => {
+      const newWeights = [
+        prev[0] + grad[0],
+        prev[1] + grad[1]
+      ];
+      setWeightHistory(h => [...h.slice(-50), newWeights]); // Keep last 50 steps
+      return newWeights;
+    });
     setIteration(i => i + 1);
   };
 
@@ -1734,6 +1744,8 @@ const FAViz = () => {
     setWeights([0.5, 0.5]);
     setIteration(0);
     setCurrentSample(null);
+    setWeightHistory([[0.5, 0.5]]);
+    setGradientVector(null);
   };
 
   const maxY = Math.max(...samples.map(s => Math.max(s.target, s.prediction))) + 1;
@@ -1769,6 +1781,160 @@ const FAViz = () => {
       </ExplanationPanel>
 
       <div style={{ display: 'flex', gap: '30px', justifyContent: 'center', flexWrap: 'wrap' }}>
+        {/* Weight Space Visualization (3Blue1Brown style) */}
+        <div style={{ 
+          width: '400px',
+          height: '400px',
+          background: 'rgba(0,0,0,0.3)',
+          borderRadius: '15px',
+          padding: '20px',
+          position: 'relative'
+        }}>
+          <h3 style={{ marginBottom: '15px', color: '#FFEAA7', fontSize: '14px', textAlign: 'center' }}>
+            Weight Space (w₀, w₁) - Gradient Descent Path
+          </h3>
+          
+          <svg style={{ width: '100%', height: '340px', position: 'relative' }}>
+            {/* Loss contour lines (simplified) */}
+            {[0.5, 1.0, 1.5, 2.0, 2.5].map((level, i) => {
+              const centerX = 200 + (trueW[0] - 1.25) * 60;
+              const centerY = 170 + (trueW[1] - 0.4) * 100;
+              const radius = level * 40;
+              return (
+                <circle
+                  key={i}
+                  cx={centerX}
+                  cy={centerY}
+                  r={radius}
+                  fill="none"
+                  stroke="rgba(255,255,255,0.1)"
+                  strokeWidth="1"
+                  strokeDasharray="3,3"
+                />
+              );
+            })}
+            
+            {/* Weight history path */}
+            {weightHistory.length > 1 && weightHistory.map((w, i) => {
+              if (i === 0) return null;
+              const x1 = 200 + (weightHistory[i-1][0] - 1.25) * 60;
+              const y1 = 170 + (weightHistory[i-1][1] - 0.4) * 100;
+              const x2 = 200 + (w[0] - 1.25) * 60;
+              const y2 = 170 + (w[1] - 0.4) * 100;
+              return (
+                <line
+                  key={`path-${i}`}
+                  x1={x1}
+                  y1={y1}
+                  x2={x2}
+                  y2={y2}
+                  stroke="#FFEAA7"
+                  strokeWidth="2"
+                  opacity={0.6}
+                  style={{ transition: 'all 0.3s' }}
+                />
+              );
+            })}
+            
+            {/* True weights (target) */}
+            <circle
+              cx={200 + (trueW[0] - 1.25) * 60}
+              cy={170 + (trueW[1] - 0.4) * 100}
+              r="8"
+              fill="#4ECDC4"
+              stroke="#fff"
+              strokeWidth="2"
+              style={{ filter: 'drop-shadow(0 0 8px rgba(78,205,196,0.8))' }}
+            />
+            <text
+              x={200 + (trueW[0] - 1.25) * 60}
+              y={170 + (trueW[1] - 0.4) * 100 - 15}
+              fill="#4ECDC4"
+              fontSize="11"
+              textAnchor="middle"
+              fontWeight="bold"
+            >
+              True w*
+            </text>
+            
+            {/* Current weights */}
+            <circle
+              cx={200 + (weights[0] - 1.25) * 60}
+              cy={170 + (weights[1] - 0.4) * 100}
+              r="10"
+              fill="#FFEAA7"
+              stroke="#fff"
+              strokeWidth="3"
+              style={{ 
+                filter: 'drop-shadow(0 0 10px rgba(255,234,167,0.8))',
+                transition: 'all 0.3s ease'
+              }}
+            />
+            <text
+              x={200 + (weights[0] - 1.25) * 60}
+              y={170 + (weights[1] - 0.4) * 100 + 25}
+              fill="#FFEAA7"
+              fontSize="12"
+              textAnchor="middle"
+              fontWeight="bold"
+            >
+              w
+            </text>
+            
+            {/* Gradient vector arrow */}
+            {gradientVector && (
+              <g>
+                <defs>
+                  <marker
+                    id="arrowhead-gradient"
+                    markerWidth="10"
+                    markerHeight="10"
+                    refX="9"
+                    refY="3"
+                    orient="auto"
+                  >
+                    <polygon points="0 0, 10 3, 0 6" fill="#FF6B6B" />
+                  </marker>
+                </defs>
+                <line
+                  x1={200 + (weights[0] - 1.25) * 60}
+                  y1={170 + (weights[1] - 0.4) * 100}
+                  x2={200 + (weights[0] - 1.25) * 60 + gradientVector.x * 500}
+                  y2={170 + (weights[1] - 0.4) * 100 + gradientVector.y * 500}
+                  stroke="#FF6B6B"
+                  strokeWidth="3"
+                  markerEnd="url(#arrowhead-gradient)"
+                  opacity="0.8"
+                  style={{ transition: 'all 0.3s' }}
+                />
+                <text
+                  x={200 + (weights[0] - 1.25) * 60 + gradientVector.x * 500 + 10}
+                  y={170 + (weights[1] - 0.4) * 100 + gradientVector.y * 500}
+                  fill="#FF6B6B"
+                  fontSize="11"
+                  fontWeight="bold"
+                >
+                  ∇
+                </text>
+              </g>
+            )}
+            
+            {/* Axes */}
+            <line x1="50" y1="170" x2="350" y2="170" stroke="rgba(255,255,255,0.3)" strokeWidth="2" />
+            <line x1="200" y1="30" x2="200" y2="310" stroke="rgba(255,255,255,0.3)" strokeWidth="2" />
+            
+            {/* Axis labels */}
+            <text x="200" y="325" fill="rgba(255,255,255,0.7)" fontSize="12" textAnchor="middle">w₀</text>
+            <text x="30" y="180" fill="rgba(255,255,255,0.7)" fontSize="12" textAnchor="middle" transform="rotate(-90 30 180)">w₁</text>
+            
+            {/* Scale markers */}
+            <text x="50" y="185" fill="rgba(255,255,255,0.5)" fontSize="10">0.5</text>
+            <text x="350" y="185" fill="rgba(255,255,255,0.5)" fontSize="10">2.5</text>
+            <text x="195" y="30" fill="rgba(255,255,255,0.5)" fontSize="10">1.0</text>
+            <text x="195" y="310" fill="rgba(255,255,255,0.5)" fontSize="10">0.0</text>
+          </svg>
+        </div>
+        
         {/* Graph */}
         <div style={{ 
           width: '450px',
