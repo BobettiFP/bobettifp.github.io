@@ -144,25 +144,57 @@ const { useState, useEffect, useCallback, useRef, useMemo, useContext, useReduce
     
     console.log('Modified component code, creating script element...');
     
-    // Create a script element with the modified component code
-    const componentScript = document.createElement('script');
-    componentScript.type = 'text/babel';
-    componentScript.text = finalCode;
-    
-    // Add error handler to catch Babel compilation errors
-    componentScript.onerror = (error) => {
-      console.error('Script execution error:', error);
-      showError('Script execution error', 'There was an error executing the component code. Check console for details.');
-    };
-    
-    // Wrap in try-catch for immediate errors
-    try {
-      document.body.appendChild(componentScript);
-      console.log('Script element created, waiting for Babel to process...');
-    } catch (error) {
-      console.error('Error appending script:', error);
-      showError('Error loading script', error.message);
-      return;
+    // Try to use Babel.transform directly if available for better error handling
+    if (typeof Babel !== 'undefined' && Babel.transform) {
+      console.log('Using Babel.transform directly...');
+      try {
+        const transformed = Babel.transform(finalCode, {
+          presets: ['react']
+        });
+        console.log('Babel transformation successful, code length:', transformed.code.length);
+        
+        // Execute the transformed code directly
+        const execScript = document.createElement('script');
+        execScript.text = transformed.code;
+        document.body.appendChild(execScript);
+        
+        console.log('Transformed code executed, checking for component...');
+        // Give it a moment to execute
+        setTimeout(() => {
+          if (window.RLCompleteVisualization) {
+            console.log('Component found via Babel.transform!');
+          } else {
+            console.warn('Component not found after Babel.transform execution');
+          }
+        }, 100);
+      } catch (babelError) {
+        console.error('Babel transformation error:', babelError);
+        showError('Babel compilation error', babelError.message + (babelError.stack ? '\n' + babelError.stack : ''));
+        return;
+      }
+    } else {
+      console.log('Babel.transform not available, using script tag method...');
+      
+      // Create a script element with the modified component code
+      const componentScript = document.createElement('script');
+      componentScript.type = 'text/babel';
+      componentScript.text = finalCode;
+      
+      // Add error handler to catch Babel compilation errors
+      componentScript.onerror = (error) => {
+        console.error('Script execution error:', error);
+        showError('Script execution error', 'There was an error executing the component code. Check console for details.');
+      };
+      
+      // Wrap in try-catch for immediate errors
+      try {
+        document.body.appendChild(componentScript);
+        console.log('Script element created, waiting for Babel to process...');
+      } catch (error) {
+        console.error('Error appending script:', error);
+        showError('Error loading script', error.message);
+        return;
+      }
     }
     
     // Also listen for any unhandled errors that might occur during Babel processing
@@ -180,44 +212,70 @@ const { useState, useEffect, useCallback, useRef, useMemo, useContext, useReduce
     
     // Function to check if component is available and mount it
     let attempts = 0;
-    const maxAttempts = 100; // 10 seconds max (100 * 100ms)
+    const maxAttempts = 150; // 15 seconds max (150 * 100ms) - increased for large code
     
     const checkAndMount = () => {
       attempts++;
-      const Component = window.RLCompleteVisualization || (typeof RLCompleteVisualization !== 'undefined' ? RLCompleteVisualization : null);
       
-      if (Component) {
+      // Check multiple ways the component might be available
+      const Component = window.RLCompleteVisualization || 
+                       (typeof RLCompleteVisualization !== 'undefined' ? RLCompleteVisualization : null) ||
+                       (window.RL && window.RL.CompleteVisualization) ||
+                       null;
+      
+      if (Component && typeof Component === 'function') {
         console.log('Component found, mounting...', Component);
         try {
           const root = ReactDOM.createRoot(container);
           root.render(React.createElement(Component));
           console.log('Component mounted successfully!');
+          return; // Success, stop checking
         } catch (renderError) {
           console.error('Error rendering component:', renderError);
           showError('Error rendering component', renderError.message + '\n' + renderError.stack);
+          return;
         }
       } else if (attempts < maxAttempts) {
         if (attempts % 10 === 0) {
           console.log(`Still waiting for component... (attempt ${attempts}/${maxAttempts})`);
-          console.log('Available window properties:', Object.keys(window).filter(k => 
-            k.includes('RL') || k.includes('Complete') || k.includes('React') || k.includes('Viz')
-          ));
+          const relevantProps = Object.keys(window).filter(k => 
+            k.includes('RL') || k.includes('Complete') || k.includes('React') || k.includes('Viz') || k.includes('Tooltip') || k.includes('Callout')
+          );
+          if (relevantProps.length > 0) {
+            console.log('Found relevant window properties:', relevantProps);
+          }
+          // Also check if any functions were defined
+          const functions = Object.keys(window).filter(k => typeof window[k] === 'function' && 
+            (k.includes('Viz') || k.includes('Tooltip') || k.includes('Callout')));
+          if (functions.length > 0) {
+            console.log('Found relevant functions:', functions);
+          }
         }
         setTimeout(checkAndMount, 100);
       } else {
         console.error('Component not found after all attempts');
-        console.log('Final check - Available window properties:', Object.keys(window).filter(k => 
-          k.includes('RL') || k.includes('Complete') || k.includes('React') || k.includes('Viz')
-        ));
+        const allRelevant = Object.keys(window).filter(k => 
+          k.includes('RL') || k.includes('Complete') || k.includes('Viz') || k.includes('Tooltip') || k.includes('Callout')
+        );
+        console.log('Final check - All relevant window properties:', allRelevant);
+        console.log('Checking if component code executed at all...');
+        
+        // Check if any part of the component code executed
+        const hasTooltip = typeof Tooltip !== 'undefined' || window.Tooltip;
+        const hasCallout = typeof Callout !== 'undefined' || window.Callout;
+        console.log('Tooltip defined:', hasTooltip, 'Callout defined:', hasCallout);
+        
         showError('Component not found after processing', 
           'RLCompleteVisualization was not defined after ' + maxAttempts + ' attempts. ' +
-          'The component code may have syntax errors. Check the browser console for Babel errors.');
+          'The component code may have syntax errors or Babel failed to compile it. ' +
+          'Check the browser console for Babel errors. ' +
+          (hasTooltip || hasCallout ? 'Some component parts were found, suggesting partial execution.' : ''));
       }
     };
     
-    // Start checking after Babel processes (Babel processes when script is added to DOM)
-    // Give it a moment to process
-    setTimeout(checkAndMount, 200);
+    // Start checking after Babel processes
+    // Give it more time for large code files
+    setTimeout(checkAndMount, 500);
     
   } catch (error) {
     showError(error.message, error.stack);
