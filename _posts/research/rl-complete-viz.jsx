@@ -1436,8 +1436,8 @@ const MCViz = ({ onShowComparison }) => {
               <div style={{ fontSize: '12px' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '5px', marginBottom: '8px', fontWeight: 'bold', opacity: 0.6 }}>
                   <span>State</span>
-                  <span>R_t</span>
-                  <span>G_t</span>
+                  <span>R<sub>t</sub></span>
+                  <span>G<sub>t</sub></span>
                 </div>
                 {currentEpisode.map((step, i) => (
                   <div key={i} style={{
@@ -1458,20 +1458,27 @@ const MCViz = ({ onShowComparison }) => {
                 ))}
               </div>
 
-              {phase === 'calculating' && highlightStep >= 0 && highlightStep < currentEpisode.length - 1 && (
-                <div style={{
-                  marginTop: '15px',
-                  padding: '10px',
-                  background: 'rgba(247,220,111,0.2)',
-                  borderRadius: '8px',
-                  fontSize: '12px',
-                  fontFamily: 'monospace'
-                }}>
-                  G<sub>{highlightStep}</sub> = R<sub>{highlightStep}</sub> + γ·G<sub>{highlightStep + 1}</sub><br/>
-                  = {currentEpisode[highlightStep].reward} + {gamma}×{currentEpisode[highlightStep+1]?.returnValue?.toFixed(2)}<br/>
-                  <strong style={{ color: '#F7DC6F' }}>= {currentEpisode[highlightStep].returnValue?.toFixed(2)}</strong>
-                </div>
-              )}
+              {phase === 'calculating' && highlightStep >= 0 && highlightStep < currentEpisode.length - 1 && (() => {
+                const stepIdx = highlightStep;
+                const nextIdx = stepIdx + 1;
+                const currentReward = currentEpisode[stepIdx]?.reward || 0;
+                const nextReturn = currentEpisode[nextIdx]?.returnValue || 0;
+                const currentReturn = currentEpisode[stepIdx]?.returnValue || 0;
+                return (
+                  <div style={{
+                    marginTop: '15px',
+                    padding: '10px',
+                    background: 'rgba(247,220,111,0.2)',
+                    borderRadius: '8px',
+                    fontSize: '12px',
+                    fontFamily: 'monospace'
+                  }}>
+                    G<sub>{stepIdx}</sub> = R<sub>{stepIdx}</sub> + γ·G<sub>{nextIdx}</sub><br/>
+                    = {currentReward} + {gamma}×{nextReturn.toFixed(2)}<br/>
+                    <strong style={{ color: '#F7DC6F' }}>= {currentReturn.toFixed(2)}</strong>
+                  </div>
+                );
+              })()}
             </div>
           ) : (
             <div style={{ opacity: 0.5, textAlign: 'center', padding: '30px 0' }}>
@@ -4029,7 +4036,7 @@ export default function RLCompleteVisualization() {
           borderRadius: '4px',
           border: '1px solid rgba(255,255,255,0.2)'
         }}>
-          v1.02
+          v1.03
         </div>
         <p style={{ opacity: 0.7, fontSize: '14px', marginBottom: '10px' }}>
           MDP → DP → MC → TD → FA → DQN → MCTS → PG → RLHF
