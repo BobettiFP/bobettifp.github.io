@@ -4015,17 +4015,22 @@ export default function RLCompleteVisualization() {
         </button>
         <h1 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '8px', opacity: 0.95 }}>
           🎬 Complete RL Algorithm Visualization
-          <span style={{ 
-            fontSize: '10px', 
-            opacity: 0.4,
-            color: '#fff',
-            fontFamily: 'monospace',
-            marginLeft: '10px',
-            fontWeight: 'normal'
-          }}>
-            v1.02
-          </span>
         </h1>
+        <div style={{ 
+          position: 'absolute',
+          top: '25px',
+          right: '20px',
+          fontSize: '11px',
+          opacity: 0.6,
+          color: '#fff',
+          fontFamily: 'monospace',
+          background: 'rgba(255,255,255,0.1)',
+          padding: '2px 8px',
+          borderRadius: '4px',
+          border: '1px solid rgba(255,255,255,0.2)'
+        }}>
+          v1.02
+        </div>
         <p style={{ opacity: 0.7, fontSize: '14px', marginBottom: '10px' }}>
           MDP → DP → MC → TD → FA → DQN → MCTS → PG → RLHF
         </p>
