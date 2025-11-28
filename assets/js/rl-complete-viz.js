@@ -1145,13 +1145,13 @@ const MCViz = ({ onShowComparison }) => {
     let G = 0;
     const returnSteps = [];
     
-    for (let t = episode.length - 1; t >= 0; t--) {
+    for (let timeStep = episode.length - 1; timeStep >= 0; timeStep--) {
       const prevG = G;
-      G = episode[t].reward + gamma * G;
-      updated[t].returnValue = G;
-      returnSteps.push({ t, reward: episode[t].reward, prevG, newG: G, gamma });
-      setReturnVisualization({ t, reward: episode[t].reward, prevG, newG: G, gamma });
-      setHighlightStep(t);
+      G = episode[timeStep].reward + gamma * G;
+      updated[timeStep].returnValue = G;
+      returnSteps.push({ timeStep, reward: episode[timeStep].reward, prevG, newG: G, gamma });
+      setReturnVisualization({ timeStep, reward: episode[timeStep].reward, prevG, newG: G, gamma });
+      setHighlightStep(timeStep);
       setCurrentEpisode([...updated]);
       await new Promise(resolve => setTimeout(resolve, 400));
     }
@@ -1166,15 +1166,15 @@ const MCViz = ({ onShowComparison }) => {
     const newValues = { ...stateValues };
     const visited = new Set();
     
-    for (let t = 0; t < episode.length - 1; t++) {
-      const state = episode[t].state;
+    for (let timeIdx = 0; timeIdx < episode.length - 1; timeIdx++) {
+      const state = episode[timeIdx].state;
       if (!visited.has(state)) {
         visited.add(state);
         if (!newReturns[state]) newReturns[state] = [];
-        newReturns[state].push(episode[t].returnValue);
+        newReturns[state].push(episode[timeIdx].returnValue);
         newValues[state] = newReturns[state].reduce((a, b) => a + b, 0) / newReturns[state].length;
         
-        setHighlightStep(t);
+        setHighlightStep(timeIdx);
         setStateReturns({ ...newReturns });
         setStateValues({ ...newValues });
         await new Promise(resolve => setTimeout(resolve, 300));
@@ -1266,11 +1266,11 @@ const MCViz = ({ onShowComparison }) => {
           padding: '20px'
         }}>
           <h3 style={{ marginBottom: '15px', color: '#F7DC6F', fontSize: '14px', textAlign: 'center' }}>
-            Return Calculation: G_t = R_t + γ·G_{t+1}
+            Return Calculation: G<sub>t</sub> = R<sub>t</sub> + γ·G<sub>t+1</sub>
           </h3>
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '30px', height: '150px' }}>
             <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '12px', opacity: 0.7, marginBottom: '5px' }}>R_t</div>
+              <div style={{ fontSize: '12px', opacity: 0.7, marginBottom: '5px' }}>R<sub>t</sub></div>
               <div style={{ 
                 width: '60px', 
                 height: '60px', 
@@ -1291,7 +1291,7 @@ const MCViz = ({ onShowComparison }) => {
             <div style={{ fontSize: '30px', color: '#fff' }}>+</div>
             
             <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '12px', opacity: 0.7, marginBottom: '5px' }}>γ·G_{t+1}</div>
+              <div style={{ fontSize: '12px', opacity: 0.7, marginBottom: '5px' }}>γ·G<sub>t+1</sub></div>
               <div style={{ 
                 width: '60px', 
                 height: '60px', 
@@ -1312,7 +1312,7 @@ const MCViz = ({ onShowComparison }) => {
             <div style={{ fontSize: '30px', color: '#fff' }}>=</div>
             
             <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '12px', opacity: 0.7, marginBottom: '5px' }}>G_t</div>
+              <div style={{ fontSize: '12px', opacity: 0.7, marginBottom: '5px' }}>G<sub>t</sub></div>
               <div style={{ 
                 width: '80px', 
                 height: '80px', 
@@ -1467,7 +1467,7 @@ const MCViz = ({ onShowComparison }) => {
                   fontSize: '12px',
                   fontFamily: 'monospace'
                 }}>
-                  G_{highlightStep} = R_{highlightStep} + γ·G_{highlightStep+1}<br/>
+                  G<sub>{highlightStep}</sub> = R<sub>{highlightStep}</sub> + γ·G<sub>{highlightStep + 1}</sub><br/>
                   = {currentEpisode[highlightStep].reward} + {gamma}×{currentEpisode[highlightStep+1]?.returnValue?.toFixed(2)}<br/>
                   <strong style={{ color: '#F7DC6F' }}>= {currentEpisode[highlightStep].returnValue?.toFixed(2)}</strong>
                 </div>
@@ -4015,6 +4015,16 @@ export default function RLCompleteVisualization() {
         </button>
         <h1 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '8px', opacity: 0.95 }}>
           🎬 Complete RL Algorithm Visualization
+          <span style={{ 
+            fontSize: '10px', 
+            opacity: 0.4,
+            color: '#fff',
+            fontFamily: 'monospace',
+            marginLeft: '10px',
+            fontWeight: 'normal'
+          }}>
+            v1.02
+          </span>
         </h1>
         <p style={{ opacity: 0.7, fontSize: '14px', marginBottom: '10px' }}>
           MDP → DP → MC → TD → FA → DQN → MCTS → PG → RLHF
