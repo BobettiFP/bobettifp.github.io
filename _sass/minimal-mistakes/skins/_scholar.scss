@@ -1,0 +1,41 @@
+/* ==========================================================================
+   Scholar skin  —  indigo + slate academic palette
+   ========================================================================== */
+
+/* Base palette */
+$scholar-indigo:     #3d5a99;   /* primary — deep academic indigo */
+$scholar-indigo-lt:  #5c7bc4;   /* lighter tint for hover states */
+$scholar-indigo-dk:  #28407a;   /* darker shade for visited/active */
+$scholar-slate:      #2c3e50;   /* body text — dark slate, not pure black */
+$scholar-slate-mid:  #4a5568;   /* muted text / metadata */
+$scholar-bg:         #f8f9fc;   /* very light lavender-white */
+$scholar-border:     #dce3ef;   /* light blue-gray border */
+$scholar-code-bg:    #eef1f8;   /* inline code background */
+$scholar-navy:       #1e2d4a;   /* footer background */
+
+/* Minimal Mistakes skin variables */
+$background-color:           $scholar-bg !default;
+$text-color:                 $scholar-slate !default;
+$muted-text-color:           $scholar-slate-mid !default;
+$primary-color:              $scholar-indigo !default;
+$border-color:               $scholar-border !default;
+$code-background-color:      $scholar-code-bg !default;
+$code-background-color-dark: mix(#000, $scholar-code-bg, 10%) !default;
+$form-background-color:      mix(#fff, $scholar-bg, 50%) !default;
+$footer-background-color:    $scholar-navy !default;
+$link-color:                 $scholar-indigo !default;
+$link-color-hover:           $scholar-indigo-lt !default;
+$link-color-visited:         $scholar-indigo-dk !default;
+$masthead-link-color:        $scholar-slate !default;
+$masthead-link-color-hover:  $scholar-indigo !default;
+$navicon-link-color-hover:   mix(#fff, $scholar-slate, 80%) !default;
+$notice-background-mix:      88% !default;
+$code-notice-background-mix: 94% !default;
+
+.page__footer {
+  color: #fff !important;
+}
+
+.page__footer-follow .social-icons .svg-inline--fa {
+  color: inherit;
+}

@@ -12,16 +12,16 @@
 
 #theme                  : "minimal-mistakes-jekyll"
 remote_theme           : "mmistakes/minimal-mistakes"
-minimal_mistakes_skin    : "air" # "air", "aqua", "contrast", "dark", "dirt", "neon", "mint", "plum", "sunrise"
+minimal_mistakes_skin    : "scholar" # "air", "aqua", "contrast", "dark", "dirt", "neon", "mint", "plum", "sunrise"
 
 # Site Settings
 locale                   : "ko-KR"
 rtl                      : # true, false (default) # turns direction of the page into right to left for RTL languages
-title                    : "Scribble"
+title                    : "Scribble Notes"
 title_separator          : "-"
-subtitle                 : "Scribble"
+subtitle                 : "Kim Hyegang · PhD @ UofT"
 name                     : "Kim Hyegang"
-description              : "Open version of my notion."
+description              : "Research notes and life observations by Kim Hyegang, PhD student at the University of Toronto. Topics: LLM, Reinforcement Learning, Network Science, NLP."
 url                      : "https://bobettifp.github.io"
 baseurl                  : ""
 repository               : "bobettifp/bobettifp.github.io"
@@ -30,7 +30,7 @@ logo                     : # path of logo image to display in the masthead, e.g.
 masthead_title           : # overrides the website title displayed in the masthead, use " " for no title
 breadcrumbs              : # true, false (default)
 words_per_minute         : 200
-enable_copy_code_button  : # true, false (default)
+enable_copy_code_button  : true
 copyright                : # "copyright" name, defaults to site.title
 copyright_url            : # "copyright" URL, defaults to site.url
 comments:
@@ -117,23 +117,14 @@ author:
   avatar           : # path of avatar image, e.g. "/assets/images/bio-photo.jpg"
   bio              : "LLM · RL · Network Science · NLP"
   location         : "Seoul-Korea / Toronto-Canada"
-  email            : "mailto:bobetti219@gmail.com"
+  email            : "bobetti219@gmail.com"
   links:
     - label: "Email"
       icon: "fas fa-fw fa-envelope-square"
-      url: "bobetti219@gmail.com"
-    - label: "Website"
-      icon: "fas fa-fw fa-link"
-      # url: "https://your-website.com"
-    - label: "Twitter"
-      icon: "fab fa-fw fa-twitter-square"
-      # url: "https://twitter.com/"
-    - label: "Facebook"
-      icon: "fab fa-fw fa-facebook-square"
-      # url: "https://facebook.com/"
+      url: "mailto:bobetti219@gmail.com"
     - label: "GitHub"
       icon: "fab fa-fw fa-github"
-      # url: "https://github.com/"
+      url: "https://github.com/bobettifp"
     - label: "Instagram"
       icon: "fab fa-fw fa-instagram"
       url: "https://www.instagram.com/bobetti219/"
