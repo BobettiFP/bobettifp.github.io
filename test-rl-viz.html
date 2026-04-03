@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RL Visualization Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #1a1a2e;
+            color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <div id="rl-viz-container" style="width: 100%; min-height: 600px;"></div>
+
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <script type="text/babel">
+        // Error display utility
+        function showError(title, message) {
+            const container = document.getElementById('rl-viz-container');
+            if (container) {
+                container.innerHTML = `
+                    <div style="padding: 20px; background: rgba(255,107,107,0.15); border-radius: 12px; border: 1px solid #FF6B6B; color: #fff;">
+                        <h4 style="margin-top: 0; color: #FF6B6B;">RL Visualization Error: ${title}</h4>
+                        <p style="font-size: 14px; line-height: 1.6;">${message}</p>
+                        <p style="font-size: 12px; opacity: 0.8;">Please check the browser console (F12) for more details.</p>
+                    </div>
+                `;
+            }
+            console.error('RL Visualization Error:', title, message);
+        }
+
+        // Error Boundary Component
+        class ErrorBoundary extends React.Component {
+            constructor(props) {
+                super(props);
+                this.state = { hasError: false, error: null, errorInfo: null };
+            }
+
+            static getDerivedStateFromError(error) {
+                return { hasError: true, error };
+            }
+
+            componentDidCatch(error, errorInfo) {
+                console.error("Uncaught error in RL Visualization component:", error, errorInfo);
+                this.setState({ errorInfo });
+            }
+
+            render() {
+                if (this.state.hasError) {
+                    return (
+                        <div style={{ padding: '20px', background: 'rgba(255,107,107,0.15)', borderRadius: '12px', border: '1px solid #FF6B6B', color: '#fff' }}>
+                            <h4 style={{ marginTop: 0, color: '#FF6B6B' }}>Error in RL Visualization</h4>
+                            <p style={{ fontSize: '14px', lineHeight: '1.6' }}>Something went wrong while rendering the visualization.</p>
+                            <details style={{ whiteSpace: 'pre-wrap', fontSize: '12px', opacity: 0.8 }}>
+                                {this.state.error && this.state.error.toString()}
+                                <br />
+                                {this.state.errorInfo && this.state.errorInfo.componentStack}
+                            </details>
+                            <p style={{ fontSize: '12px', opacity: 0.8, marginTop: '10px' }}>Please check the browser console (F12) for more details.</p>
+                        </div>
+                    );
+                }
+                return this.props.children;
+            }
+        }
+
+        (async function() {
+            const container = document.getElementById('rl-viz-container');
+            if (!container) {
+                console.error('RL Visualization: Container element #rl-viz-container not found.');
+                return;
+            }
+
+            // Ensure React and ReactDOM are loaded
+            if (typeof React === 'undefined' || typeof ReactDOM === 'undefined' || typeof Babel === 'undefined') {
+                showError('Dependencies Not Loaded', 'React, ReactDOM, or Babel Standalone are not loaded. Please check CDN links.');
+                return;
+            }
+
+            try {
+                // Load from local file - try multiple paths
+                const possiblePaths = [
+                    './assets/js/rl-complete-viz.js',
+                    '/assets/js/rl-complete-viz.js',
+                    'assets/js/rl-complete-viz.js',
+                    '../assets/js/rl-complete-viz.js'
+                ];
+                
+                let response = null;
+                let successfulPath = '';
+                
+                for (const path of possiblePaths) {
+                    try {
+                        response = await fetch(path);
+                        if (response.ok) {
+                            successfulPath = path;
+                            break;
+                        }
+                    } catch (e) {
+                        console.warn(`Failed to fetch from ${path}:`, e);
+                        continue;
+                    }
+                }
+                
+                if (!response || !response.ok) {
+                    throw new Error(`Failed to load component from any path. Last status: ${response?.status || 'no response'}. 
+
+⚠️ CORS Error: Please access this file through a web server, not by opening the file directly.
+
+To fix:
+1. Open terminal in: /Users/hyegang/Desktop/Blog/bobettifp.github.io
+2. Run: python3 -m http.server 8000
+3. Open browser to: http://localhost:8000/test-rl-viz.html`);
+                }
+
+                console.log('Successfully loaded component file');
+                const componentCode = await response.text();
+                
+                if (!componentCode || componentCode.length < 100) {
+                    throw new Error('Component code appears to be empty or invalid');
+                }
+
+                console.log('Component code loaded, length:', componentCode.length);
+                
+                // Modify the component code to make it work with Babel Standalone
+                let modifiedCode = componentCode.replace(/^import\s+.*?from\s+['"].*?['"];?\s*$/gm, '');
+                
+                modifiedCode = modifiedCode
+                    .replace(/export\s+default\s+function\s+RLCompleteVisualization/g, 'function RLCompleteVisualization')
+                    .replace(/export\s+default\s+RLCompleteVisualization/g, 'RLCompleteVisualization');
+                
+                modifiedCode = modifiedCode.replace(/^export\s+/gm, '');
+                
+                const hookPolyfill = `
+// Extract React hooks (since we removed the import)
+const { useState, useEffect, useCallback, useRef, useMemo, useContext, useReducer } = React;
+`;
+                
+                const finalCode = hookPolyfill + modifiedCode + '\n\nif (typeof RLCompleteVisualization !== "undefined") {\n  window.RLCompleteVisualization = RLCompleteVisualization;\n  console.log("RLCompleteVisualization assigned to window");\n} else {\n  console.error("RLCompleteVisualization function not found after processing");\n}';
+                
+                console.log('Code modifications applied. Final code length:', finalCode.length);
+                
+                let Component = null;
+
+                // Try Babel.transform directly
+                if (typeof Babel !== 'undefined' && typeof Babel.transform === 'function') {
+                    console.log('Using Babel.transform directly...');
+                    try {
+                        const transformed = Babel.transform(finalCode, {
+                            presets: ['react'],
+                            filename: 'rl-complete-viz.js',
+                            minified: false,
+                            compact: false,
+                            sourceMaps: 'inline',
+                            parserOpts: {
+                                plugins: ['jsx']
+                            },
+                            generatorOpts: {
+                                retainFunctionParens: true,
+                                retainLines: true
+                            },
+                            plugins: [
+                                ['transform-modules-umd', { loose: true }]
+                            ]
+                        });
+                        console.log('Babel transformation successful, code length:', transformed.code.length);
+
+                        // Execute the transformed code
+                        const scriptElement = document.createElement('script');
+                        scriptElement.text = transformed.code;
+                        document.body.appendChild(scriptElement);
+                        console.log('Transformed code executed, checking for component...');
+
+                        if (window.RLCompleteVisualization) {
+                            Component = window.RLCompleteVisualization;
+                            console.log('Component found via Babel.transform!');
+                        } else {
+                            console.error('RLCompleteVisualization not found after executing transformed code.');
+                        }
+
+                    } catch (babelError) {
+                        console.error('Babel transformation failed:', babelError);
+                        showError('Babel Compilation Error', babelError.message + ' (Check console for details)');
+                        return;
+                    }
+                }
+
+                // Function to check if component is available and mount it
+                let attempts = 0;
+                const maxAttempts = 50;
+                
+                const checkAndMount = () => {
+                    attempts++;
+                    if (attempts % 10 === 0) {
+                        console.log(`Still waiting for component... (attempt ${attempts}/${maxAttempts})`);
+                    }
+
+                    if (Component) {
+                        console.log('Component found, mounting...', Component);
+                        try {
+                            const root = ReactDOM.createRoot(container);
+                            root.render(React.createElement(ErrorBoundary, null, React.createElement(Component)));
+                            console.log('Component mounted successfully!');
+                        } catch (renderError) {
+                            console.error('Error rendering component:', renderError);
+                            showError('Error rendering component', renderError.message);
+                        }
+                    } else if (window.RLCompleteVisualization && (typeof window.RLCompleteVisualization === 'function' || typeof window.RLCompleteVisualization === 'object')) {
+                        Component = window.RLCompleteVisualization;
+                        console.log('Component found via window.RLCompleteVisualization, mounting...', Component);
+                        try {
+                            const root = ReactDOM.createRoot(container);
+                            root.render(React.createElement(ErrorBoundary, null, React.createElement(Component)));
+                            console.log('Component mounted successfully!');
+                        } catch (renderError) {
+                            console.error('Error rendering component:', renderError);
+                            showError('Error rendering component', renderError.message);
+                        }
+                    } else if (attempts < maxAttempts) {
+                        setTimeout(checkAndMount, 100);
+                    } else {
+                        console.error('Component not found after all attempts');
+                        showError('Component Not Found', `RLCompleteVisualization was not defined after ${maxAttempts} attempts. The component code may have syntax errors or failed to execute. Check the browser console for Babel errors.`);
+                    }
+                };
+
+                // Start checking for the component
+                checkAndMount();
+
+            } catch (error) {
+                console.error('Error loading RL visualization:', error);
+                showError('Initialization Error', error.message);
+            }
+        })();
+    </script>
+</body>
+</html>
+

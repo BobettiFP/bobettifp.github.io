@@ -265,7 +265,8 @@ const MDPViz = () => {
   const [totalReward, setTotalReward] = useState(0);
   const [trajectory, setTrajectory] = useState([]);
   const [showProbabilities, setShowProbabilities] = useState(false);
-  
+  const [probAction, setProbAction] = useState('a');
+
   const states = ['S1', 'S2', 'S3', 'Goal'];
   const gamma = 0.9;
   
@@ -448,20 +449,37 @@ const MDPViz = () => {
             );
           })}
           
-          {/* Transition probabilities on hover */}
+          {/* Transition probabilities overlay */}
           {showProbabilities && currentState !== 'Goal' && (
             <div style={{
               position: 'absolute',
               right: '10px',
               top: '10px',
-              background: 'rgba(0,0,0,0.8)',
-              padding: '10px',
-              borderRadius: '8px',
-              fontSize: '11px'
+              background: 'rgba(0,0,0,0.9)',
+              padding: '12px',
+              borderRadius: '10px',
+              fontSize: '11px',
+              border: '1px solid rgba(255,255,255,0.2)',
+              minWidth: '130px',
             }}>
-              <div style={{ marginBottom: '5px', opacity: 0.7 }}>P(s'|{currentState}, a):</div>
-              {Object.entries(transitions[currentState]['a']).map(([s, p]) => (
-                p > 0 && <div key={s}>→{s}: {(p*100).toFixed(0)}%</div>
+              <div style={{ display: 'flex', gap: '6px', marginBottom: '8px' }}>
+                {['a', 'b'].map(act => (
+                  <button key={act} onClick={() => setProbAction(act)} style={{
+                    flex: 1,
+                    padding: '3px 8px',
+                    background: probAction === act ? 'rgba(78,205,196,0.4)' : 'rgba(255,255,255,0.1)',
+                    border: probAction === act ? '1px solid #4ECDC4' : '1px solid rgba(255,255,255,0.2)',
+                    borderRadius: '4px',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    fontSize: '11px',
+                    fontWeight: probAction === act ? 'bold' : 'normal',
+                  }}>Action {act.toUpperCase()}</button>
+                ))}
+              </div>
+              <div style={{ marginBottom: '5px', opacity: 0.7 }}>P(s'|{currentState}, {probAction}):</div>
+              {Object.entries(transitions[currentState][probAction]).map(([s, p]) => (
+                p > 0 && <div key={s} style={{ color: p >= 0.5 ? '#4ECDC4' : 'inherit' }}>→{s}: {(p*100).toFixed(0)}%</div>
               ))}
             </div>
           )}
@@ -476,7 +494,7 @@ const MDPViz = () => {
             marginBottom: '15px'
           }}>
             <div style={{ fontSize: '14px', marginBottom: '15px' }}>
-              현재 상태: <strong style={{ color: '#FF6B6B', fontSize: '18px' }}>{currentState}</strong>
+              Current State: <strong style={{ color: '#FF6B6B', fontSize: '18px' }}>{currentState}</strong>
             </div>
             
             {currentState !== 'Goal' ? (
@@ -527,10 +545,30 @@ const MDPViz = () => {
                 cursor: 'pointer',
                 fontWeight: 'bold'
               }}>
-                🎉 Goal 도달! 다시 시작
+                🎉 Goal Reached! Restart
               </button>
             )}
           </div>
+
+          {/* Show Probabilities Toggle */}
+          {currentState !== 'Goal' && (
+            <button
+              onClick={() => setShowProbabilities(!showProbabilities)}
+              style={{
+                width: '100%',
+                padding: '8px',
+                marginBottom: '10px',
+                background: showProbabilities ? 'rgba(78,205,196,0.2)' : 'rgba(255,255,255,0.05)',
+                border: showProbabilities ? '1px solid #4ECDC4' : '1px solid rgba(255,255,255,0.2)',
+                borderRadius: '8px',
+                color: showProbabilities ? '#4ECDC4' : 'rgba(255,255,255,0.7)',
+                cursor: 'pointer',
+                fontSize: '12px',
+              }}
+            >
+              {showProbabilities ? '🔢 Hide Transition Probs' : '🔢 Show Transition Probs'}
+            </button>
+          )}
 
           {/* Transition Result */}
           {transitionResult && (
@@ -541,7 +579,7 @@ const MDPViz = () => {
               marginBottom: '15px',
               animation: 'fadeIn 0.3s ease'
             }}>
-              <div style={{ fontSize: '13px', marginBottom: '10px' }}>전이 결과:</div>
+              <div style={{ fontSize: '13px', marginBottom: '10px' }}>Transition Result:</div>
               <div style={{ fontFamily: 'monospace', fontSize: '12px', lineHeight: '1.8' }}>
                 P({transitionResult.nextState}|{currentState}, {selectedAction})
                 {Object.entries(transitionResult.probs).map(([s, p]) => (
@@ -639,8 +677,9 @@ const DPViz = () => {
   const [showCalculation, setShowCalculation] = useState(null);
   const [isAnimating, setIsAnimating] = useState(false);
   const [valueHistory, setValueHistory] = useState([]);
-  
-  const gamma = 0.9;
+  const [gamma, setGamma] = useState(0.9);
+  const [animSpeed, setAnimSpeed] = useState(300);
+
   const goalPos = { row: 3, col: 3 };
   
   const actions = [
@@ -683,7 +722,7 @@ const DPViz = () => {
           formula: `V(s) = R + γV(s') = ${reward} + ${gamma}×${grid[nr][nc].toFixed(1)} = ${newValue.toFixed(2)}`
         });
         
-        await new Promise(resolve => setTimeout(resolve, 300));
+        await new Promise(resolve => setTimeout(resolve, animSpeed));
         newGrid[r][c] = newValue;
       }
     }
@@ -696,7 +735,7 @@ const DPViz = () => {
     setHighlightCell(null);
     setShowCalculation(null);
     setIsAnimating(false);
-  }, [grid, policy, gamma, goalPos.row, goalPos.col, actions]);
+  }, [grid, policy, gamma, animSpeed, goalPos.row, goalPos.col, actions]);
 
   const runPolicyImprovement = useCallback(async () => {
     setIsAnimating(true);
@@ -732,8 +771,8 @@ const DPViz = () => {
           oldAction: policy[r][c]
         });
         
-        await new Promise(resolve => setTimeout(resolve, 300));
-        
+        await new Promise(resolve => setTimeout(resolve, animSpeed));
+
         if (newPolicy[r][c] !== bestAction.name) {
           policyChanged = true;
           newPolicy[r][c] = bestAction.name;
@@ -748,7 +787,7 @@ const DPViz = () => {
     setIsAnimating(false);
     
     return policyChanged;
-  }, [grid, policy, gamma, goalPos.row, goalPos.col, actions]);
+  }, [grid, policy, gamma, animSpeed, goalPos.row, goalPos.col, actions]);
 
   const reset = () => {
     setGrid(Array(4).fill(null).map(() => Array(4).fill(0)));
@@ -802,7 +841,7 @@ const DPViz = () => {
           background: phase === 'evaluation' ? 'rgba(78,205,196,0.4)' : 'rgba(255,255,255,0.05)',
           border: phase === 'evaluation' ? '2px solid #4ECDC4' : '1px solid rgba(255,255,255,0.1)',
         }}>
-          1. Policy Evaluation (V 계산)
+          1. Policy Evaluation (compute V)
         </div>
         <div style={{
           padding: '10px 25px',
@@ -810,7 +849,7 @@ const DPViz = () => {
           background: phase === 'improvement' ? 'rgba(247,220,111,0.4)' : 'rgba(255,255,255,0.05)',
           border: phase === 'improvement' ? '2px solid #F7DC6F' : '1px solid rgba(255,255,255,0.1)',
         }}>
-          2. Policy Improvement (π 개선)
+          2. Policy Improvement (update π)
         </div>
       </div>
 
@@ -984,7 +1023,7 @@ const DPViz = () => {
             phase === 'evaluation' ? (
               <div style={{ fontSize: '13px' }}>
                 <div style={{ marginBottom: '10px', opacity: 0.7 }}>
-                  셀 ({showCalculation.r}, {showCalculation.c}), π={showCalculation.action}
+                  Cell ({showCalculation.r}, {showCalculation.c}), π={showCalculation.action}
                 </div>
                 <div style={{ 
                   background: 'rgba(78,205,196,0.2)',
@@ -1001,7 +1040,7 @@ const DPViz = () => {
             ) : (
               <div style={{ fontSize: '13px' }}>
                 <div style={{ marginBottom: '10px', opacity: 0.7 }}>
-                  셀 ({showCalculation.r}, {showCalculation.c})
+                  Cell ({showCalculation.r}, {showCalculation.c})
                 </div>
                 {showCalculation.actionValues?.map((av, i) => (
                   <div key={i} style={{
@@ -1016,14 +1055,14 @@ const DPViz = () => {
                 ))}
                 {showCalculation.oldAction !== showCalculation.bestAction && (
                   <div style={{ marginTop: '10px', color: '#F7DC6F' }}>
-                    π 변경: {showCalculation.oldAction} → {showCalculation.bestAction}
+                    π updated: {showCalculation.oldAction} → {showCalculation.bestAction}
                   </div>
                 )}
               </div>
             )
           ) : (
             <div style={{ opacity: 0.5, textAlign: 'center', padding: '30px 0' }}>
-              버튼을 눌러 실행
+              Press a button to begin
             </div>
           )}
         </div>
@@ -1055,6 +1094,23 @@ const DPViz = () => {
         }}>
           Reset
         </button>
+      </div>
+
+      {/* Parameter sliders */}
+      <div style={{ display: 'flex', gap: '30px', justifyContent: 'center', flexWrap: 'wrap', marginTop: '20px', padding: '15px 20px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: '200px' }}>
+          <label style={{ fontSize: '12px', opacity: 0.8, minWidth: '70px' }}>γ = {gamma.toFixed(2)}</label>
+          <input type="range" min="0.5" max="0.99" step="0.01" value={gamma}
+            onChange={e => { setGamma(parseFloat(e.target.value)); reset(); }}
+            style={{ flex: 1 }} />
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: '200px' }}>
+          <label style={{ fontSize: '12px', opacity: 0.8, minWidth: '70px' }}>Speed</label>
+          <input type="range" min="50" max="800" step="50" value={animSpeed}
+            onChange={e => setAnimSpeed(parseInt(e.target.value))}
+            style={{ flex: 1 }} />
+          <span style={{ fontSize: '11px', opacity: 0.6 }}>{animSpeed > 400 ? 'Slow' : animSpeed < 150 ? 'Fast' : 'Med'}</span>
+        </div>
       </div>
 
       <div style={{ textAlign: 'center', marginTop: '15px', opacity: 0.7 }}>
@@ -1097,8 +1153,9 @@ const MCViz = ({ onShowComparison }) => {
   const [phase, setPhase] = useState('idle');
   const [highlightStep, setHighlightStep] = useState(-1);
   const [returnVisualization, setReturnVisualization] = useState(null);
-  
-  const gamma = 0.9;
+  const [gamma, setGamma] = useState(0.9);
+  const [animSpeed, setAnimSpeed] = useState(300);
+
   const goalPos = { row: 3, col: 3 };
 
   const generateEpisode = useCallback(async () => {
@@ -1153,12 +1210,12 @@ const MCViz = ({ onShowComparison }) => {
       setReturnVisualization({ timeStep, reward: episode[timeStep].reward, prevG, newG: G, gamma });
       setHighlightStep(timeStep);
       setCurrentEpisode([...updated]);
-      await new Promise(resolve => setTimeout(resolve, 400));
+      await new Promise(resolve => setTimeout(resolve, animSpeed));
     }
-    
+
     setReturnVisualization(null);
     return updated;
-  }, [gamma]);
+  }, [gamma, animSpeed]);
 
   const updateAverages = useCallback(async (episode) => {
     setPhase('averaging');
@@ -1241,9 +1298,9 @@ const MCViz = ({ onShowComparison }) => {
       {/* Phase indicator */}
       <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', marginBottom: '25px', flexWrap: 'wrap' }}>
         {[
-          { id: 'generating', label: '1. Episode 생성', color: '#45B7D1' },
-          { id: 'calculating', label: '2. Return G_t 계산 (역방향)', color: '#F7DC6F' },
-          { id: 'averaging', label: '3. V(s) = 평균(G)', color: '#4ECDC4' }
+          { id: 'generating', label: '1. Generate Episode', color: '#45B7D1' },
+          { id: 'calculating', label: '2. Calculate Returns G_t (backward)', color: '#F7DC6F' },
+          { id: 'averaging', label: '3. Update V(s) = mean(G)', color: '#4ECDC4' }
         ].map(p => (
           <div key={p.id} style={{
             padding: '8px 20px',
@@ -1482,7 +1539,7 @@ const MCViz = ({ onShowComparison }) => {
             </div>
           ) : (
             <div style={{ opacity: 0.5, textAlign: 'center', padding: '30px 0' }}>
-              Episode를 실행하세요
+              Run an episode to begin
             </div>
           )}
         </div>
@@ -1516,6 +1573,23 @@ const MCViz = ({ onShowComparison }) => {
             🔍 Compare MC vs TD
           </button>
         )}
+      </div>
+
+      {/* Parameter sliders */}
+      <div style={{ display: 'flex', gap: '30px', justifyContent: 'center', flexWrap: 'wrap', marginTop: '20px', padding: '15px 20px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: '200px' }}>
+          <label style={{ fontSize: '12px', opacity: 0.8, minWidth: '70px' }}>γ = {gamma.toFixed(2)}</label>
+          <input type="range" min="0.5" max="0.99" step="0.01" value={gamma}
+            onChange={e => setGamma(parseFloat(e.target.value))}
+            style={{ flex: 1 }} />
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: '200px' }}>
+          <label style={{ fontSize: '12px', opacity: 0.8, minWidth: '70px' }}>Speed</label>
+          <input type="range" min="50" max="800" step="50" value={animSpeed}
+            onChange={e => setAnimSpeed(parseInt(e.target.value))}
+            style={{ flex: 1 }} />
+          <span style={{ fontSize: '11px', opacity: 0.6 }}>{animSpeed > 400 ? 'Slow' : animSpeed < 150 ? 'Fast' : 'Med'}</span>
+        </div>
       </div>
 
       <Callout type="tip" title="Monte Carlo Key Points" icon="💡">
@@ -1555,8 +1629,8 @@ const TDViz = ({ onShowComparison }) => {
   const [isRunning, setIsRunning] = useState(false);
   const [trajectory, setTrajectory] = useState([]);
   
-  const alpha = 0.1;
-  const gamma = 0.9;
+  const [alpha, setAlpha] = useState(0.1);
+  const [gamma, setGamma] = useState(0.9);
   const goalPos = { row: 3, col: 3 };
 
   const takeStep = useCallback(() => {
@@ -1841,12 +1915,12 @@ const TDViz = ({ onShowComparison }) => {
                 background: lastUpdate.tdError > 0 ? 'rgba(78,205,196,0.1)' : 'rgba(231,76,60,0.1)',
                 borderLeft: `3px solid ${lastUpdate.tdError > 0 ? '#4ECDC4' : '#E74C3C'}`
               }}>
-                {lastUpdate.tdError > 0 ? '📈 예상보다 좋음 → 가치 상향' : '📉 예상보다 나쁨 → 가치 하향'}
+                {lastUpdate.tdError > 0 ? '📈 Better than expected → value increased' : '📉 Worse than expected → value decreased'}
               </div>
             </div>
           ) : (
             <div style={{ opacity: 0.5, textAlign: 'center', padding: '30px 0' }}>
-              Step을 실행하세요
+              Take a step to begin
             </div>
           )}
         </div>
@@ -1889,6 +1963,22 @@ const TDViz = ({ onShowComparison }) => {
         )}
       </div>
 
+      {/* Parameter sliders */}
+      <div style={{ display: 'flex', gap: '30px', justifyContent: 'center', flexWrap: 'wrap', marginTop: '20px', padding: '15px 20px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: '200px' }}>
+          <label style={{ fontSize: '12px', opacity: 0.8, minWidth: '70px' }}>α = {alpha.toFixed(2)}</label>
+          <input type="range" min="0.01" max="0.5" step="0.01" value={alpha}
+            onChange={e => setAlpha(parseFloat(e.target.value))}
+            style={{ flex: 1 }} />
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: '200px' }}>
+          <label style={{ fontSize: '12px', opacity: 0.8, minWidth: '70px' }}>γ = {gamma.toFixed(2)}</label>
+          <input type="range" min="0.5" max="0.99" step="0.01" value={gamma}
+            onChange={e => setGamma(parseFloat(e.target.value))}
+            style={{ flex: 1 }} />
+        </div>
+      </div>
+
       <Callout type="tip" title="TD vs MC: Key Differences" icon="💡">
         <div style={{ marginBottom: '15px' }}>
           <strong>Bootstrap:</strong> Use current estimate V(s') instead of waiting for actual return G_t
@@ -1928,8 +2018,8 @@ const FAViz = () => {
   const [loss, setLoss] = useState(0);
   const [weightHistory, setWeightHistory] = useState([[0.5, 0.5]]);
   const [gradientVector, setGradientVector] = useState(null);
-  
-  const alpha = 0.01;
+  const [alpha, setAlpha] = useState(0.01);
+
   const trueW = [2, 0.8]; // True weights
 
   const trueValue = (s) => trueW[0] + trueW[1] * s;
@@ -2303,6 +2393,16 @@ const FAViz = () => {
         Iterations: {iteration}
       </div>
 
+      {/* Alpha slider */}
+      <div style={{ display: 'flex', justifyContent: 'center', marginTop: '15px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 20px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', minWidth: '280px' }}>
+          <label style={{ fontSize: '12px', opacity: 0.8, minWidth: '80px' }}>α = {alpha.toFixed(3)}</label>
+          <input type="range" min="0.001" max="0.1" step="0.001" value={alpha}
+            onChange={e => { setAlpha(parseFloat(e.target.value)); reset(); }}
+            style={{ flex: 1 }} />
+        </div>
+      </div>
+
       <Callout type="tip" title="Function Approximation Key Points" icon="💡">
         <div style={{ marginBottom: '15px' }}>
           <strong>Generalization:</strong> Use V_w(s) = w·φ(s) instead of a table → similar states share values
@@ -2631,6 +2731,24 @@ const DQNViz = () => {
       </div>
       <div style={{ textAlign: 'center', marginTop: '10px', opacity: 0.6, fontSize: '13px' }}>
         Step: {step}
+      </div>
+
+      {/* Epsilon (ε-greedy) indicator */}
+      <div style={{ marginTop: '15px', padding: '15px 20px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+          <span style={{ fontSize: '12px', opacity: 0.8 }}>ε-greedy Exploration</span>
+          <span style={{ fontSize: '14px', fontWeight: 'bold', color: epsilon > 0.5 ? '#FF6B6B' : epsilon > 0.2 ? '#F7DC6F' : '#4ECDC4' }}>
+            ε = {epsilon.toFixed(2)}
+          </span>
+        </div>
+        <div style={{ display: 'flex', height: '10px', borderRadius: '5px', overflow: 'hidden', background: 'rgba(255,255,255,0.1)' }}>
+          <div style={{ width: `${epsilon * 100}%`, background: 'linear-gradient(90deg, #FF6B6B, #F7DC6F)', transition: 'width 0.3s', borderRadius: '5px 0 0 5px' }} />
+          <div style={{ flex: 1, background: 'rgba(78,205,196,0.3)' }} />
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px', fontSize: '10px', opacity: 0.5 }}>
+          <span>Explore ({(epsilon * 100).toFixed(0)}%)</span>
+          <span>Exploit ({((1 - epsilon) * 100).toFixed(0)}%)</span>
+        </div>
       </div>
 
       <Callout type="tip" title="DQN's Two Key Tricks" icon="💡">
@@ -3176,14 +3294,14 @@ const PGViz = () => {
               
               <div style={{ fontSize: '11px', fontFamily: 'monospace', opacity: 0.8 }}>
                 ∇J ≈ (G-b) · Σ∇log π(a_t|s_t)<br/>
-                {currentTraj.totalReturn - baseline > 0 
-                  ? '→ 선택한 행동들의 확률 ↑' 
-                  : '→ 선택한 행동들의 확률 ↓'}
+                {currentTraj.totalReturn - baseline > 0
+                  ? '→ Probability of selected actions ↑'
+                  : '→ Probability of selected actions ↓'}
               </div>
             </div>
           ) : (
             <div style={{ opacity: 0.5, textAlign: 'center', padding: '30px 0' }}>
-              Trajectory를 샘플링하세요
+              Sample a trajectory to begin
             </div>
           )}
         </div>
@@ -3246,9 +3364,9 @@ const PGViz = () => {
 // ==================== 9. RLHF VISUALIZATION ====================
 const RLHFViz = () => {
   const [responses, setResponses] = useState([
-    { id: 0, text: '응답 A: 친절하고 안전한 답변', reward: 0.8, prob: 0.33 },
-    { id: 1, text: '응답 B: 도움이 되지만 약간 위험', reward: 0.4, prob: 0.33 },
-    { id: 2, text: '응답 C: 불친절하지만 정확한 답변', reward: 0.2, prob: 0.34 },
+    { id: 0, text: 'Response A: Helpful and safe answer', reward: 0.8, prob: 0.33 },
+    { id: 1, text: 'Response B: Helpful but slightly unsafe', reward: 0.4, prob: 0.33 },
+    { id: 2, text: 'Response C: Accurate but unhelpful tone', reward: 0.2, prob: 0.34 },
   ]);
   const [refProbs] = useState([0.33, 0.33, 0.34]);
   const [beta, setBeta] = useState(0.1);
@@ -3287,9 +3405,9 @@ const RLHFViz = () => {
 
   const reset = () => {
     setResponses([
-      { id: 0, text: '응답 A: 친절하고 안전한 답변', reward: 0.8, prob: 0.33 },
-      { id: 1, text: '응답 B: 도움이 되지만 약간 위험', reward: 0.4, prob: 0.33 },
-      { id: 2, text: '응답 C: 불친절하지만 정확한 답변', reward: 0.2, prob: 0.34 },
+      { id: 0, text: 'Response A: Helpful and safe answer', reward: 0.8, prob: 0.33 },
+      { id: 1, text: 'Response B: Helpful but slightly unsafe', reward: 0.4, prob: 0.33 },
+      { id: 2, text: 'Response C: Accurate but unhelpful tone', reward: 0.2, prob: 0.34 },
     ]);
     setStep(0);
   };
